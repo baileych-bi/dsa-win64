@@ -26,7 +26,7 @@ enum class CodonOutput {
 
 std::optional<CodonOutput> codon_output_from_string(const char *s);
 
-using TemplateSource = std::variant<fs::path, bio::Cdns, bio::Aas, std::nullopt_t>;
+using TemplateSource = std::variant<fs::path, bio::Cdns, bio::Aas>;
 
 struct Params {
     bool split_template_requested() const { return split_template_regex.mark_count() > 0; }

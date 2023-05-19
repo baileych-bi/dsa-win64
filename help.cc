@@ -26,7 +26,7 @@ print_help() {
         {'s', "no_header",      "suppress printing of headers in program output"},
         {'f', "fw_ref",         "nucleotide sequence(s) used to determine UMI and reading frame for forward read"},
         {'r', "rv_ref",         "nucleotide sequence(s) used to determine UMI and reading frame for reverse read"},
-        {'t', "template",       "amino acid sequence to which translated paired-end reads will be aligned"},
+        {'t', "template",       "amino acid sequence to which translated paired-end reads will be aligned (or 'none' for no alignment)"},
         {'d', "template_dna",   "dna sequence which will be traslated for alignmet with translated paired-end reads"},
         {'q', "min_qual",       "bases with quality scores of < min_qual will be removed from 3' ends of reads (default=A)"},
         {'x', "skip_assembly",  "skip paired read assemly and align forward and reverse reads to template independently (off by default)"},
@@ -225,17 +225,28 @@ print_help_templates() {
               << "  report the results.\n\n"
               << "A command to perform the multi-alignment proceedure outlined above might look\n"
               << "  like the following:\n\n"
-              << "  $dsa --split=\"(.+[YF][YF]C..)(.+WG.G).+\" \\\n"
+              << "  $dsa --split=\"(.+[YF][YF]C..)(.+)WG.G.*\" \\\n"
               << "  $ --template_db=mouse_v_regions_imgt.fasta \\\n"
               << "  $ --trim=27,0 \\\n"
-              << "  $ --template=RSEFYYYGNTYYYSAMDYWGQG \\\n"
+              << "  $ --template=RSEFYYYGNTYYYSAMDY \\\n"
               << "  $ --trim=0,0 \\ \n"
               << "  $ -f XXXXXXXXXXXXX -r XXXXXXXXXXXXX fw_reads.fastq rv_reads.fastq\n\n"
               << "  where -f and -r are appropriate reference sequences and the amino acid\n"
               << "  sequence supplied to --template is that of the engineered HCDR3. 27 amino acids\n"
               << "  will be removed from the N-terminus of each mouse V region in\n"
-              << "  mouse_v_regions_imgt.fasta prior to alignment. The HCDR3 template will be aligned\n"
-              << "  as is." << std::endl;
+              << "  mouse_v_regions_imgt.fasta prior to alignment. The HCDR3 will be aligned to the\n"
+              << "  amino acid sequence RSEFYYY..." << std::endl;
+    std::cout << "Note, not everything needs to be aligned to a template or template database. To\n"
+              << " skip alignment of a sequence or part of a split, use --template=none. For\n"
+              << " example, to modify the command above to identify and align to V regions\n"
+              << " from an IMGT database but not try to align the HCDR3 to any particular\n"
+              << " template sequence, use the following:\n\n"
+              << "  $dsa --split=\"(.+[YF][YF]C)(.+)WG.G.*\" \\\n"
+              << "  $ --template_db=mouse_v_regions_imgt.fasta \\\n"
+              << "  $ --trim=27,0 \\\n"
+              << "  $ --template=none \\\n"
+              << "  $ -f XXXXXXXXXXXXX -r XXXXXXXXXXXXX fw_reads.fastq rv_reads.fastq\n\n"
+              << std::endl;
 }
 
 Params
@@ -385,7 +396,11 @@ parse_argv(int argc, char **argv) {
                 p.no_header_flag = 1;
                 break;
             case 't':
-                p.aa_template = optarg;
+                if (std::strcmp(optarg, "none") == 0) {
+                    p.aa_template = "";
+                } else {
+                    p.aa_template = optarg;
+                }
                 p.template_sources.push_back(p.aa_template);
                 break;
             case 'v':

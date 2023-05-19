@@ -693,23 +693,6 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
         return alignments;
     }
 
-    if (dbs.empty()) {
-        alignments.reserve(orfs.size());
-        for (std::vector<Orf>& splits : orfs) {
-            if (splits.empty()) continue;
-            GroupAlignment ga;
-            ga.umi_group_size = splits.front().umi_group_size;
-            ga.barcode = splits.front().barcode;
-            ga.templ = nullptr;
-            for (Orf& orf : splits) {
-                ga.cdns += orf.cdns.as_string_view();
-                ga.alignment += orf.aas.as_string_view();
-            }
-            alignments.push_back(std::move(ga));
-        }
-        return alignments;
-    }
-
     struct WorkerOutput {
         GroupAlignment alignment;
         std::vector<size_t> template_ids;
@@ -727,7 +710,15 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
         std::string          full_template;
 
         for (size_t i=0; i<orfs.size(); ++i) {
+            if (dbs[i] == nullptr) {
+                template_ids.push_back(0);
+                alignment.alignment += orfs[i].aas.c_str();
+                alignment.cdns += orfs[i].cdns.c_str();
+                continue;
+            }
+
             Alignment aln;
+
             size_t template_id = dbs[i]->codon_data_available()
                                ? dbs[i]->query_and_align(orfs[i].cdns, aln)
                                : dbs[i]->query_and_align(orfs[i].aas,  aln);
@@ -810,11 +801,16 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
             std::shared_ptr<AlignmentTemplate> tpl = std::shared_ptr<AlignmentTemplate>(new AlignmentTemplate);
             tpl->id = ++next_id;
             const std::vector<size_t> &ids = ii->first;
+            const std::string nil;
             for (size_t i=0; i<ids.size(); ++i) {
                 size_t id = ids[i];
-                tpl->labels.push_back(dbs[i]->get_label(id));
-                tpl->aas   += dbs[i]->get_aas(id);
-                tpl->cdns  += dbs[i]->get_codons(id);
+                if (dbs[i]) {
+                    tpl->labels.push_back(dbs[i]->get_label(id));
+                    tpl->aas += dbs[i]->get_aas(id);
+                    tpl->cdns += dbs[i]->get_codons(id);
+                } else {
+                    tpl->labels.push_back("none");
+                }
             }
             ii->second = tpl;
         }

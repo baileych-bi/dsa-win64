@@ -48,13 +48,6 @@ main(int argc, char *argv[]) {
         exit (EXIT_FAILURE);
     }
 
-    for (const auto &source : p.template_sources) {
-        if (std::visit([](auto &&arg)->size_t { return arg.empty(); }, source)) {
-            std::cerr << "all template sources must be non-empty" << std::endl;
-            exit (EXIT_FAILURE);
-        }
-    }
-
     //std::cerr << "p.template_sources.size()==" << p.template_sources.size() << std::endl;
     if (p.skip_assembly_flag && p.template_sources.size() > 1) {
         std::cerr << "skipping assembly (i.e. -x, --skip_assembly) is incompatible with "
@@ -88,15 +81,20 @@ main(int argc, char *argv[]) {
                 db = TemplateDatabase::create_empty();
                 db->add_entry("user_defined_cdns", std::get<Cdns>(source), Aas(std::get<Cdns>(source)));
             } else if (std::holds_alternative<Aas>(source)) {
-                db = TemplateDatabase::create_empty();
-                db->add_entry("user_defined_aas", Cdns(), std::get<Aas>(source));
+                Aas aas = std::get<Aas>(source);
+                if (aas.empty()) {
+                    db = nullptr;
+                } else {
+                    db = TemplateDatabase::create_empty();
+                    db->add_entry("user_defined_aas", Cdns(), std::get<Aas>(source));
+                }
             } else {
                 std::cerr << "Unkown template source." << std::endl;
                 exit (EXIT_FAILURE);
             }
 
             try {
-                db->trim(p.trims[i]);
+                if (db) db->trim(p.trims[i]);
             } catch (ExcessiveTrimmingError &ex) {
                 std::cerr << ex.what() << std::endl;
                 exit (EXIT_FAILURE);
@@ -324,14 +322,15 @@ main(int argc, char *argv[]) {
 
     //if we have more than one template, we sort the alignments by template id
     //so that the output has similar sequences adjacent to one another
-    if (!template_dbs.empty() && template_dbs.size() * template_dbs.front()->size() > 1) {
-        std::sort(alignments.begin(), 
-                  alignments.end(), 
-                  [](const GroupAlignment &a, const GroupAlignment &b)->bool{
-                    return a.templ->id < b.templ->id;
-                  }
-        );
-    }
+    std::sort(alignments.begin(), 
+        alignments.end(), 
+        [](const GroupAlignment &a, const GroupAlignment &b)->bool{
+            if ( a.templ ==  b.templ) return false;
+            if (!a.templ &&  b.templ) return true;
+            if ( a.templ && !b.templ) return false;
+            return a.templ->id < b.templ->id;
+        }
+    );
 
     //Alignments are sorted by tempate_id where template_id is the index into templates
     //we now iterate over the templates and process only alignments with the corresponding template_id
@@ -447,6 +446,7 @@ main(int argc, char *argv[]) {
         std::cout << "#reads aligned to template separately (-x, --skip_assembly)\t" << p.skip_assembly_flag << std::endl;
         std::cout << "#minimum nucleotide alignment overlap (-v, --min_overlap)\t" << p.min_overlap << std::endl;
         std::cout << "#maximum nucleotide mismatches allowed (-m, --max_mismatch)\t" << p.max_mismatches << std::endl;
+        std::cout << "#minimum template alignment score (-a, --min_aln)\t" << p.min_alignment_score << std::endl;
         std::cout << "#Parse#" << std::endl; 
         std::cout << "#paired end reads parsed\t" << total_reads << std::endl;
         std::cout << "#reads filtered because of non-ATGC characters\t" << log.filter_invalid_chars << std::endl;
@@ -621,15 +621,16 @@ main(int argc, char *argv[]) {
         std::unordered_map<std::string, Counts> uniq_cdns;
 
         for (size_t i = 0; i < alignments.size(); ++i) {
+            GroupAlignment& aln = alignments[i];
+            std::erase(aln.alignment, '-'); //remove gaps from alignment string before calculating uniqueness
+            std::erase(aln.cdns, ' '); //remove gaps from codons
             {
-                GroupAlignment& aln = alignments[i];
                 auto [ii, success] = uniq.insert(std::make_pair(aln.alignment, Counts{}));
                 ii->second.seq = ii->first.c_str();
                 ii->second.groups += 1;
                 ii->second.reads += static_cast<unsigned int>(aln.umi_group_size);
             }
             {
-                GroupAlignment& aln = alignments[i];
                 auto [ii, success] = uniq_cdns.insert(std::make_pair(aln.cdns, Counts{}));
                 ii->second.seq = ii->first.c_str();
                 ii->second.groups += 1;
