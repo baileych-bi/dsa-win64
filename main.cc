@@ -130,10 +130,11 @@ main(int argc, char *argv[]) {
         }
     }
 
-    //Filling out alignments is the ultimate goal of our program.
+    //Filling out 'alignments' is the ultimate goal of our program.
     //These GroupAlignments represent the Needleman-Wunsch alignments
     //of translated paired or unpaired read data to the user-supplied
-    //template(s)
+    //template(s), or simply the extracted sequences if no template
+    //information is given
     std::vector<GroupAlignment> alignments;
 
     auto clock_start = std::chrono::high_resolution_clock::now();
@@ -174,9 +175,9 @@ main(int argc, char *argv[]) {
     rvreads.resize(max_reads);
     */
 
-    //std::cout << "fwreads.size() == " << fwreads.size() << std::endl;
-
-    //perform qc and get back read pairs
+    //Perform qc and get back read pairs
+    //QC includes locating the primers, extracting the UMI,
+    //and trimming low-quality bases from the 3' ends of the reads.
     std::vector<ReadPair> qcd_pairs = qc_reads(
         std::move(fwreads),
         std::move(rvreads),
@@ -184,36 +185,29 @@ main(int argc, char *argv[]) {
 
     fwreads.clear(); rvreads.clear();
 
-    if (p.skip_assembly_flag) { //here we don't try to assemble paired ends; instead align fw and rv independently
-        //split the read pairs back into separate vectors for forward and backward
-
-        //std::cout << "qcd_pairs.size() == " << qcd_pairs.size() << std::endl;
+    //Sometimes data are low enough quality that the 3' ends are too hard to
+    //align or the PCR template may be too long to sequence. In these cases,
+    //we can skip assembling the read pairs and process them anyway. 
+    if (p.skip_assembly_flag) {
         for (ReadPair &rp : qcd_pairs) {
             rp.rv.barcode = rp.fw.barcode;
             fwreads.push_back(std::move(rp.fw));
             rvreads.push_back(std::move(rp.rv));
         }
         qcd_pairs.clear(); qcd_pairs.shrink_to_fit();
-
-        //std::cout << "fwreads.size() == " << fwreads.size() << std::endl;
     
-        //do umi collapse
+        //UMI collapse gives us consensus sequences for the UMI groups
         fwreads = umi_collapse(std::move(fwreads), p, log, true);
-
-        //std::cout << "fwreads.size() == " << fwreads.size() << std::endl;
-
         rvreads = umi_collapse(std::move(rvreads), p, log, true);
 
         //translate
         std::vector<Orf> nterm = translate_and_filter_ptcs(std::move(fwreads), p, log, false);
         fwreads.clear(); fwreads.shrink_to_fit();
 
-        //std::cout << "nterm.size() == " << nterm.size() << std::endl;
-
+        //We don't support splitting unpaired reads so this step just reorganizes
+        //the data structures so they can be passed to the template alignment functions
         vecvec<Orf> nsplits = split_orfs(std::move(nterm), p, log);
         nterm.clear(); nterm.shrink_to_fit();
-
-        //std::cout << "nsplits.size() == " << nsplits.size() << std::endl;
 
         std::vector<Orf> cterm = translate_and_filter_ptcs(std::move(rvreads), p, log, true);
         rvreads.clear(); rvreads.shrink_to_fit();
@@ -221,7 +215,7 @@ main(int argc, char *argv[]) {
         vecvec<Orf> csplits = split_orfs(std::move(cterm), p, log);
         cterm.clear(); cterm.shrink_to_fit();
 
-        //Note that we currently only allow 
+        //Align our reads to the template; 5' and 3' are aligned separately
         std::vector<GroupAlignment> fwaln = align_to_multiple_templates(
             std::move(nsplits),
             template_dbs,
@@ -238,14 +232,12 @@ main(int argc, char *argv[]) {
 
         alignments.reserve(fwaln.size() + rvaln.size());
 
-
         //Now we collate alignments such that the fw alignment of a read pair always
         //preceeds the rv alignment. Some pairs might only have one viable alignment
         //at this point (for example, one Orf is fine but the other has a PTC)
         //so those will be listed at the end of the alignments section. We do this by
         //sorting fw and rv alignments by barcode then interleaving them into the alignments
         //vector while storing the unpaired alignments in the unpaired vector.
-
         std::vector<GroupAlignment> unpaired; //to store the unpaired alignments
 
         //reverse-sort by barcode
@@ -307,7 +299,6 @@ main(int argc, char *argv[]) {
         //Again, the single- and multi-template code paths are the same.
         //Single templates are just folded into single-entry template
         //databases.
-
         const size_t n_splits = splits.size();
         alignments = align_to_multiple_templates(
             std::move(splits),
@@ -320,7 +311,7 @@ main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<AlignmentTemplate>> templates;
     std::vector<Matrix<float>> substitution_matrices;
 
-    //if we have more than one template, we sort the alignments by template id
+    //If we have more than one template, we sort the alignments by template id
     //so that the output has similar sequences adjacent to one another
     std::sort(alignments.begin(), 
         alignments.end(), 
@@ -342,6 +333,7 @@ main(int argc, char *argv[]) {
         lo = hi;
 
         //substitutions only make sense in the context of a template
+        //so we skip untemplated stuff.
         if (lo->templ == nullptr) {
             ++hi;
             continue;
@@ -504,10 +496,11 @@ main(int argc, char *argv[]) {
         case help::CodonOutput::Horizontal:
             ocdns.clear();
             for (char c : al.cdns) ocdns.push_back(Cdn::from_char(c));
-            std::cout << "\t\t\t" << nts << std::endl;
+            std::cout << "\t\t\t"; //<< nts << std::endl;
             for (const auto &oc : ocdns) {
-                if (!oc) std::cout << oc->p1() << oc->p2() << oc->p3() << std::endl;
+                if (oc) std::cout << oc->p1() << oc->p2() << oc->p3();
             }
+            std::cout << std::endl;
             break;
         case help::CodonOutput::Vertical:
             ocdns.clear();

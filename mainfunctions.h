@@ -1,6 +1,6 @@
 #ifndef BIO_MAINFUNCTIONS_H_
 #define BIO_MAINFUNCTIONS_H_
-
+#include <ostream>
 #include <unordered_map>
 
 #include "align.h"

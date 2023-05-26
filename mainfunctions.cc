@@ -422,9 +422,10 @@ umi_collapse(
         for (; from != to; ++from) {
             std::vector<Read> &group = from->second;
             size_t pre_consensus_group_size = group.size();
+
             if (group.size() < params.min_umi_group_size) {
                 log.filter_umi_group_size_too_small += pre_consensus_group_size;
-                return;
+                continue;
             }
 
             if (group.size() > 1) {
@@ -433,12 +434,16 @@ umi_collapse(
 
             if (group.front().umi_group_size < params.min_umi_group_size) {
                 log.filter_umi_group_size_too_small += pre_consensus_group_size;
-            } else if (std::find(group.front().dna.begin(), group.front().dna.end(), Nt::N) != group.front().dna.end()) {
-                ++log.filter_invalid_chars;
-            } else {
-                log.filter_duplicate_umi += pre_consensus_group_size - group.size();
-                output.push_back(std::move(group.front()));
+                continue;
             }
+            
+            if (std::find(group.front().dna.begin(), group.front().dna.end(), Nt::N) != group.front().dna.end()) {
+                ++log.filter_invalid_chars;
+                continue;
+            }
+
+            log.filter_duplicate_umi += pre_consensus_group_size - group.size();
+            output.push_back(std::move(group.front()));
         }
     };
 
