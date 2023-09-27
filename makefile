@@ -1,4 +1,4 @@
-CXX=clang++
+CXX=clang++-12
 CXXFLAGS= -D DSA_TARGET_LINUX -std=c++20 -stdlib=libc++ -pthread -mavx2
 
 # Project files
@@ -52,7 +52,7 @@ $(RELDIR)/%.o: $(SRCDIR)/%.cc makefile
 # Misc rules
 doc:
 	@mkdir -p doc
-	doxygen src/Doxyfile
+	doxygen Doxyfile
 
 prep:
 	@mkdir -p $(DBGDIR) $(RELDIR)

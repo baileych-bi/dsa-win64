@@ -137,43 +137,6 @@ inline char reg_char(const M &m) { return std::toupper(static_cast<char>(m)); }
 template<>
 inline char reg_char<Cdn>(const Cdn &c) { return static_cast<char>(c); }
 
-/*
-template<typename M>
-std::string
-Alignment::build_string(typename Polymer<M>::const_iterator q_lo,
-                        typename Polymer<M>::const_iterator q_hi,
-                        typename Polymer<M>::const_iterator t_lo,
-                        typename Polymer<M>::const_iterator t_hi) const {
-    const size_t q_size = q_hi - q_lo;
-    const size_t t_size = t_hi - t_lo;
-
-    assert (q_size+1 == traceback.rows() && t_size+1 == traceback.cols());
-
-    std::string aligned_query;
-
-    size_t i = q_size, j = t_size;
-    while (i + j != 0) {
-        switch (traceback.elem(i, j).move) {
-            case Cell::Move::GAP_Q:
-                aligned_query.push_back(gap_char<M>());
-                --j;
-            break;
-            case Cell::Move::GAP_T:
-                aligned_query.push_back(ins_char<M>(q_lo[i-1]));
-                --i;
-            break;
-            default:
-                aligned_query.push_back(reg_char<M>(q_lo[i-1]));
-                --i;
-                --j;
-        }
-    }
-    std::reverse(aligned_query.begin(), aligned_query.end());
-
-    return aligned_query;
-}
-*/
-
 template<typename M>
 std::string
 Alignment::build_string(typename Polymer<M>::const_iterator q_lo,
@@ -260,27 +223,31 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
     thread_local Matrix<Cell> &trace = result.traceback;
     trace.resize(q_size+1, t_size+1);
 
-    for (size_t i = 1; i < trace.rows(); ++i) trace.elem(i, 0).move = Cell::Move::GAP_T; //Cell::Move::GAP_B;
-    for (size_t j = 1; j < trace.cols(); ++j) trace.elem(0, j).move = Cell::Move::GAP_Q; //Cell::Move::GAP_A;
+    for (size_t i = 1; i < trace.rows(); ++i) {
+        trace.elem(i, 0).score = -gapp * i;
+        trace.elem(i, 0).move = Cell::Move::GAP_T; //Cell::Move::GAP_B;
+    }
+    for (size_t j = 1; j < trace.cols(); ++j) {
+        trace.elem(0, j).score = -gapp * j;
+        trace.elem(0, j).move = Cell::Move::GAP_Q; //Cell::Move::GAP_A;
+    }
 
     for (size_t i = 0; i < q_size; ++i) {
         size_t n = q_lo[i].index();
-        int32_t gapp_a = static_cast<int32_t>(i != q_size-1) * gapp;
         for (size_t j = 0; j < t_size; ++j) {
             size_t m = t_lo[j].index();
-            int32_t gapp_b = static_cast<int32_t>(j != t_size-1) * gapp;
 
             Cell cell;
             cell.move  = Cell::Move::MATCH;
             cell.score = trace.elem(i, j).score + match.elem(m, n);
 
-            int32_t gappa_score = trace.elem(i+1, j).score - gapp_a;
+            int32_t gappa_score = trace.elem(i+1, j).score - gapp;
             if (gappa_score > cell.score) {
                 cell.score = gappa_score;
                 cell.move = Cell::Move::GAP_Q;
             }
 
-            int32_t gappb_score = trace.elem(i, j+1).score - gapp_b;
+            int32_t gappb_score = trace.elem(i, j+1).score - gapp;
             if (gappb_score > cell.score) {
                 cell.score = gappb_score;
                 cell.move  = Cell::Move::GAP_T;

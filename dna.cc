@@ -22,7 +22,7 @@ const Nt Nt::N = Nt('N');
  * N: 0b1110 = 14        7
  */
 const char *Nt::clut = "-T-GA--C------N";
-const size_t Nt::indexes[8] = {0, 1, 2, 3, 0, 0, 0, 5};
+const size_t Nt::indexes[8] = {0, 1, 2, 3, 0, 0, 0, 4};
 /* In-place complement the nucleotide sequence in [dna, dna+len) */
 void
 mm256_complement_dna(char *dna, size_t len) {

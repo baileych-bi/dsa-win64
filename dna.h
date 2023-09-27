@@ -49,6 +49,8 @@ public:
 
     static const std::string valid_chars;
     static const char *clut; //complement lookup table: index using (v & 0b1111) to get complement
+
+
     static const size_t indexes[8];
 
     inline size_t index() const { return indexes[static_cast<size_t>((v & 0b1111) >> 1)]; }
@@ -68,8 +70,8 @@ public:
     Nts(const Nts &) = default;
     Nts &operator=(const Nts &) = default;
 
-    Nts(Nts &&dna) = default;
-    Nts &operator=(Nts &&) = default;
+    Nts(Nts &&dna) { swap_buffers(dna); }
+    Nts &operator=(Nts &&dna) { swap_buffers(dna); return *this; }
 
     Nts(const Cdns &);
     Nts &operator=(const Cdns &);
@@ -84,5 +86,19 @@ public:
 };
 
 }; //namespace bio
+
+template<>
+struct std::hash<bio::Nt> {
+    std::size_t operator()(const bio::Nt & nt) const noexcept {
+        return static_cast< size_t >( static_cast< char >( nt ) );
+    }
+};
+
+template<>
+struct std::hash<bio::Nts> {
+    std::size_t operator()(const bio::Nts & nts) const noexcept {
+        return std::hash<std::string_view>{}( nts.as_string_view() );
+    }
+};
 
 #endif

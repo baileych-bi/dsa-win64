@@ -236,6 +236,69 @@ Orf::contains_ptc() const {
 }
 
 void
+nw_align_aas(const Aas & q, const Aas & t, const Matrix<int32_t> & match, int32_t gapp, Alignment & result) {
+    result.clear();
+
+    thread_local Matrix<Cell> & trace = result.traceback;
+    trace.resize(q.size() + 1, t.size() + 1);
+
+    for ( size_t i = 1; i < trace.rows(); ++i ) {
+        trace.elem(i, 0).score = -gapp * i;
+        trace.elem(i, 0).move = Cell::Move::GAP_T; //Cell::Move::GAP_B;
+    }
+    for ( size_t j = 1; j < trace.cols(); ++j ) {
+        trace.elem(0, j).score = -gapp * j;
+        trace.elem(0, j).move = Cell::Move::GAP_Q; //Cell::Move::GAP_A;
+    }
+
+    for ( size_t i = 0; i < q.size(); ++i ) {
+        size_t n = q [ i ].index();
+        for ( size_t j = 0; j < t.size(); ++j ) {
+            size_t m = t [ j ].index();
+
+            Cell cell;
+            cell.move = Cell::Move::MATCH;
+            cell.score = trace.elem(i, j).score + match.elem(m, n);
+
+            int32_t gappa_score = trace.elem(i + 1, j).score - gapp;
+            if ( gappa_score > cell.score ) {
+                cell.score = gappa_score;
+                cell.move = Cell::Move::GAP_Q;
+            }
+
+            int32_t gappb_score = trace.elem(i, j + 1).score - gapp;
+            if ( gappb_score > cell.score ) {
+                cell.score = gappb_score;
+                cell.move = Cell::Move::GAP_T;
+            }
+
+            trace.elem(i + 1, j + 1) = cell;
+        }
+    }
+    result.score = trace.elem(q.size(), t.size()).score;
+
+    size_t i = q.size(), j = t.size();
+    while ( i + j != 0 ) {
+        switch ( trace.elem(i, j).move ) {
+        case Cell::Move::GAP_Q:
+            result.aligned_query.push_back('-');
+            --j;
+            break;
+        case Cell::Move::GAP_T:
+            result.aligned_query.push_back(std::tolower(static_cast< char >( q [ i - 1 ] )));
+            --i;
+            break;
+        default:
+            result.aligned_query.push_back(std::toupper(static_cast< char >( q [ i - 1 ] )));
+            --i;
+            --j;
+        }
+    }
+    std::reverse(result.aligned_query.begin(), result.aligned_query.end());
+}
+
+/*
+void
 nw_align_aas(const Aas &q, const Aas &t, const Matrix<int32_t> &match, int32_t gapp, Alignment &result) {
     result.clear();
 
@@ -292,6 +355,7 @@ nw_align_aas(const Aas &q, const Aas &t, const Matrix<int32_t> &match, int32_t g
     }
     std::reverse(result.aligned_query.begin(), result.aligned_query.end());
 }
+*/
 
 std::ostream &
 operator<<(std::ostream &os, const Read &rd) {

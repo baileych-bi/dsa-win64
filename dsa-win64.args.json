@@ -3,32 +3,28 @@
   "Id": "607d7ede-83d5-4a51-8a8f-a456840072cf",
   "Items": [
     {
-      "Id": "b25152a4-cabb-4497-845a-685ef1a55196",
+      "Id": "a9eff9e0-c82e-44d5-a2f7-00ec2d85f7f7",
       "Command": "-g 2"
     },
     {
-      "Id": "4f93f08b-42b4-4891-951f-53c58b98c55a",
-      "Command": "--template=none"
+      "Id": "58d7ca6e-de8b-40d1-afd1-3adc1437b876",
+      "Command": "-f nnnnnnAGTnnnnnnGAAGGACGCCGAGACAACA"
     },
     {
-      "Id": "aed00ff2-f0f7-407b-9b2a-d087005d3cef",
-      "Command": "-f AGTnnnnnnCCnnnnnnnnTGTTCATTCT"
+      "Id": "eb2d1cb8-7f76-432e-b9ea-8bae57ce9504",
+      "Command": "--template_dna ctcttctgcgccagcgacgccaaggcctacgacaccgagaagcggaacgtgtgggccacccactgctgcgtgcctaccgaccctaaccctcaggagatcgtgctggagaacgtgaccgagaacttcaacatgtggaagaacaacatggtcgagcagatgcacaccgacatcatcagcctttgggaccagagcctgaagccttgcgtgaagctgacccctctttgcgtgactctggagtgcagacaagtcaacaccacaaacgctaccagcagcgtgaacgtgaccaacggcgaggagataaagaactgctctttcaacgctaccacagagatcagagacaagaagcagaaagtttacgctctgttctaccggctggacatcgtccctctggaggaggagcgaaagggcaactctagcaagtaccgcctgataaactgcaacacttccgcttgcactcaagcttgccccaaa"
     },
     {
-      "Id": "de001a8b-1c2d-4a63-86cc-93cee1f260f3",
-      "Command": "-r CCCnnnnnnnnnACGACAAT"
+      "Id": "51211f69-7450-4b5c-b597-3468fe932454",
+      "Command": "-r ATTGGCTCGAAGGAGAC"
     },
     {
-      "Id": "c19290b2-03f0-495a-b94e-6d29e6a4545a",
-      "Command": " --template_dna=AAGAAAGTGGTCTTGGCCAAAAAAGGAGACACTGTGGAGCTGACCTGCACAGCATCTCAGAAGAAGAACATCCAGTTCCACTGGAAGAATTCCAACCAGATCAAGATCCTGGGAAATCAGGGTTCCTTTTTGACCAAGGGGCCTTCAAAACTGAATGACAGAGTGGACAGCCGGAGGTCGCTGTGGGACCAAGGAAACTTCCCTCTCATCATAAAAAACCTGAAGATAGAGGATAGTGACACCTACATCTGTGAAGTGGAAGATCAGAAGGAGGAAGTTCAACTCTTAGTATTTGGATTAACTGCCAACAGTGATACGCATCTgCTgCAGGGCCAGAGCCTAACACTCACTCTGGAGAGTCCCCCCGGCAGCTCACCATCACTACAaTGCCGCTCCCCtGGGGGGAAAAATATTCAAGGTGGCAAGACTCTTTCTGTCAGCCAGCTGGAACTCCAGGATTCTGGCACCTGGACATGTACAGTGCTGCAGGACCAGAAAACCTTGGAGTTCAAGATTGAT"
+      "Id": "9953ae24-73e3-41ae-bcae-ad3a413cf2bc",
+      "Command": "\"C:\\Users\\cbail\\Documents\\Data\\230908 RAMOS Apex Mutants\\jx1_S7_L001_R2_001.fastq\""
     },
     {
-      "Id": "7f5825db-0000-408e-a808-a9439f6f9c83",
-      "Command": " C:\\Users\\cbail\\Documents\\Data\\Andi_Pan\\S1R2.fastq"
-    },
-    {
-      "Id": "f967102a-9591-499f-961b-83287eb0c4b7",
-      "Command": "C:\\Users\\cbail\\Documents\\Data\\Andi_Pan\\S1R1.fastq"
+      "Id": "1759c129-abf7-41ee-bf1f-4c89c36b3010",
+      "Command": "\"C:\\Users\\cbail\\Documents\\Data\\230908 RAMOS Apex Mutants\\jx1_S7_L001_R1_001.fastq\""
     }
   ]
 }

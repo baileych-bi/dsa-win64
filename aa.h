@@ -105,10 +105,10 @@ public:
     Aas(const Aas &) = default;
     Aas &operator=(const Aas &) = default;
 
-    Aas(Polymer &&p) : Polymer(std::move(p)) {}
+    Aas(Polymer<Aa> &&p) { swap_buffers(p); }
 
-    Aas(Aas &&) = default;
-    Aas &operator=(Aas &&) = default;
+    Aas(Aas &&aas) { swap_buffers(aas); }
+    Aas &operator=(Aas &&aas) { swap_buffers(aas); return *this; }
 
     Aas(const Cdns &, const TranslationTable &ttable=StandardTranslationTable);
     Aas(Cdns &&, const TranslationTable &ttable=StandardTranslationTable);
@@ -124,10 +124,16 @@ public:
 };
 
 template<>
-struct std::hash<bio::Aa>
-{
+struct std::hash<bio::Aa> {
     std::size_t operator()(const bio::Aa &aa) const noexcept {
         return static_cast<size_t>(static_cast<char>(aa));
+    }
+};
+
+template<>
+struct std::hash<bio::Aas> {
+    std::size_t operator()(const bio::Aas & aas) const noexcept {
+        return std::hash<std::string_view>{}(aas.as_string_view());
     }
 };
 

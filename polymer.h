@@ -32,8 +32,8 @@ public:
 
     ~PolymerBase();
 
-    inline size_t size()     const { return hi_ - lo_; }
-    inline size_t capacity() const { return capacity_; }
+    inline size_t size()     const noexcept { return hi_ - lo_; }
+    inline size_t capacity() const noexcept { return capacity_; }
 
     //inline size_t capacity() const { return capacity_ - hi_; }
 
@@ -53,6 +53,8 @@ public:
 
           char &back ()       { return *(buf_ + (hi_ - 1)); }
     const char &back () const { return *(buf_ + (hi_ - 1)); }
+
+    bool operator==(const PolymerBase &rhs) const noexcept { return std::equal(buf_ + lo_, buf_ + hi_, rhs.buf_ + rhs.lo_, rhs.buf_ + rhs.hi_); }
 
     /** Exonuclease/exoprotease
       *

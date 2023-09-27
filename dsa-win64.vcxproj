@@ -49,6 +49,10 @@
     <ClCompile Include="polymer.cc" />
     <ClCompile Include="umi.cc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Doxyfile" />
+    <None Include="makefile" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

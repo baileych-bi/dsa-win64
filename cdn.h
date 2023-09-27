@@ -162,8 +162,8 @@ public:
     explicit Cdns(const Cdns &) = default;
     Cdns &operator=(const Cdns &) = default;
 
-    explicit Cdns(Cdns &&) = default;
-    Cdns &operator=(Cdns &&) = default;
+    explicit Cdns(Cdns &&cns) { swap_buffers(cns); }
+    Cdns &operator=(Cdns &&cns) { swap_buffers(cns); return *this; }
 
     Cdns(Polymer &&p) : Polymer(std::move(p)) {}
 
@@ -191,5 +191,13 @@ struct std::hash<bio::Cdn>
         return static_cast<size_t>(static_cast<char>(cdn));
     }
 };
+
+template<>
+struct std::hash<bio::Cdns> {
+    std::size_t operator()(const bio::Cdns & cdns) const noexcept {
+        return std::hash<std::string_view>{}(cdns.as_string_view());
+    }
+};
+
 
 #endif

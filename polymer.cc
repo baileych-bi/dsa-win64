@@ -13,8 +13,10 @@ PolymerBase::PolymerBase(const PolymerBase &p) {
     assert (&p != this);
     buf_ = alloc().allocate(p.size(), capacity_);
     memcpy(buf_, p.buf_+p.lo_, p.size());
-    lo_ = p.lo_;
-    hi_ = p.hi_;
+    lo_ = 0;
+    hi_ = p.size();
+    //lo_ = p.lo_;
+    //hi_ = p.hi_;
 }
 
 PolymerBase::PolymerBase(const char *begin, const char *end) {

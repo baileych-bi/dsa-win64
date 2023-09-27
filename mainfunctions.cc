@@ -241,7 +241,7 @@ assemble_reads(
     ParseLog &log) {
     std::vector<Read> result;
 
-    const unsigned int thread_count = std::thread::hardware_concurrency();
+    const unsigned int thread_count = 1; //std::thread::hardware_concurrency();
     const size_t chunk = pairs.size() / thread_count;
 
     std::vector<std::thread> threads(thread_count-1);
@@ -297,7 +297,8 @@ assemble_reads(
 
     log = std::accumulate(partial_logs.begin(), partial_logs.end(), log);
 
-    pairs.clear(); pairs.shrink_to_fit();
+    pairs.clear();
+    pairs.shrink_to_fit();
 
     return result;
 }

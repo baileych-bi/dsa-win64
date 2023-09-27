@@ -2,8 +2,10 @@
 #define DEFINES_H_
 
 #ifndef VERSION_STRING
-#define VERSION_STRING "0.2.0"
+#define VERSION_STRING "0.3.0"
 #endif
+
+#include <vector>
 
 namespace bio {
     template<typename T>
