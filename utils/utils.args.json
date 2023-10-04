@@ -1,0 +1,22 @@
+{
+  "FileVersion": 2,
+  "Id": "abb8de1f-7045-41a2-9768-d617d33a00c6",
+  "Items": [
+    {
+      "Id": "fbc1425f-b9db-4115-b741-5ef3360ecff9",
+      "Command": "-f CACACCAGGACCAGGAATCAGA"
+    },
+    {
+      "Id": "75ea83a1-ebfe-4287-a08e-b5c9f1ad9f01",
+      "Command": "-r -r TAAGTAGGCGTTCCAACCAGC"
+    },
+    {
+      "Id": "e7d27266-db62-48d6-8eea-3016a5286264",
+      "Command": "'C:\\Users\\cbail\\Documents\\Data\\B670 SRA\\R2.fastq'"
+    },
+    {
+      "Id": "66bbaad6-5fab-4db7-9585-05fc46e83dbd",
+      "Command": "'C:\\Users\\cbail\\Documents\\Data\\B670 SRA\\R1.fastq'"
+    }
+  ]
+}

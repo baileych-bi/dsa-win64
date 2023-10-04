@@ -108,7 +108,7 @@ public:
     Aas(Polymer<Aa> &&p) { swap_buffers(p); }
 
     Aas(Aas &&aas) { swap_buffers(aas); }
-    Aas &operator=(Aas &&aas) { swap_buffers(aas); return *this; }
+    Aas &operator=(Aas &&aas) noexcept { swap_buffers(aas); return *this; }
 
     Aas(const Cdns &, const TranslationTable &ttable=StandardTranslationTable);
     Aas(Cdns &&, const TranslationTable &ttable=StandardTranslationTable);

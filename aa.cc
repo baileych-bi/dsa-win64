@@ -17,7 +17,7 @@ mm256_translate_cdns(char *dst, const char *src, size_t n, const Aa *ttable) {
     __m256i lut0x60 = _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(ttable+48),
                                           reinterpret_cast<const __m128i *>(ttable+48));
 
-    __m256i himask = _mm256_set1_epi8(0xF0);
+    __m256i himask = _mm256_set1_epi8(0xF0u);
 
     for (size_t i=0; i<n; i+= chunk) {
         __m256i cdns   = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src+i));

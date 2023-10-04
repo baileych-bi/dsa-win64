@@ -242,11 +242,11 @@ nw_align_aas(const Aas & q, const Aas & t, const Matrix<int32_t> & match, int32_
     thread_local Matrix<Cell> & trace = result.traceback;
     trace.resize(q.size() + 1, t.size() + 1);
 
-    for ( size_t i = 1; i < trace.rows(); ++i ) {
+    for (int i = 1; i < trace.rows(); ++i ) {
         trace.elem(i, 0).score = -gapp * i;
         trace.elem(i, 0).move = Cell::Move::GAP_T; //Cell::Move::GAP_B;
     }
-    for ( size_t j = 1; j < trace.cols(); ++j ) {
+    for (int j = 1; j < trace.cols(); ++j ) {
         trace.elem(0, j).score = -gapp * j;
         trace.elem(0, j).move = Cell::Move::GAP_Q; //Cell::Move::GAP_A;
     }
