@@ -6,7 +6,13 @@ namespace bio {
 
 void
 mm256_translate_cdns(char *dst, const char *src, size_t n, const Aa *ttable) {
+    static_assert (Cdn::BIAS == 0x30, "mm256_translate_cdns assumes Cdn::BIAS is 0x30, please update this function to reflect the new codon bias");
+
     constexpr const size_t chunk = sizeof(__m256i);
+
+    size_t m = (reinterpret_cast<uintptr_t>(src) + chunk - 1)/chunk*chunk - reinterpret_cast<uintptr_t>(src);
+
+    for (; m; --m, --n, ++src, ++dst) *dst = ttable[*src - Cdn::BIAS]; //adopt trick from seqc to allow for aligned load
 
     __m256i lut0x30 = _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(ttable+ 0),
                                           reinterpret_cast<const __m128i *>(ttable+ 0));
@@ -20,7 +26,7 @@ mm256_translate_cdns(char *dst, const char *src, size_t n, const Aa *ttable) {
     __m256i himask = _mm256_set1_epi8(0xF0u);
 
     for (size_t i=0; i<n; i+= chunk) {
-        __m256i cdns   = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src+i));
+        __m256i cdns   = _mm256_load_si256(reinterpret_cast<const __m256i *>(src+i));
 
         __m256i aas    = _mm256_shuffle_epi8(lut0x30, cdns);
 
@@ -35,6 +41,7 @@ mm256_translate_cdns(char *dst, const char *src, size_t n, const Aa *ttable) {
                 xlate  = _mm256_shuffle_epi8(lut0x60, cdns);
                 uselut = _mm256_cmpeq_epi8(_mm256_and_si256(cdns, himask), _mm256_set1_epi8(0x060));
                 aas    = _mm256_blendv_epi8(aas, xlate, uselut);
+
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst+i), aas);
     }
 }

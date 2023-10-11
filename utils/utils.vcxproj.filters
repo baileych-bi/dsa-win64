@@ -18,7 +18,7 @@
     <ClCompile Include="utils.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\aa.cc">
+    <ClCompile Include="..\align.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\cdn.cc">
@@ -28,6 +28,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\polymer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\aa.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -25,6 +25,7 @@
 #include "params.h"
 #include "polymer.h"
 #include "umi.h"
+#include "tests.h"
 
 namespace fs = std::filesystem;
 using namespace bio;
@@ -36,6 +37,18 @@ main(int argc, char *argv[]) {
         std::cerr << "Deep Sequencing Analysis version " << VERSION_STRING << ": "
                   << "run dsa --help for instructions." << std::endl;
         exit (EXIT_FAILURE);
+    }
+
+    if (argc == 2 && std::string("test") == argv[1]) {
+        try {
+            test::run_all();
+        } catch (test::test_failed_error &ex) {
+            std::cerr << "test failed:" << std::endl;
+            std::cerr << ex.what() << std::endl;
+            throw ex;
+        }
+        std::cout << "All tests successful." << std::endl;
+        exit (EXIT_SUCCESS);
     }
 
     const help::Params p = help::parse_argv(argc, argv);

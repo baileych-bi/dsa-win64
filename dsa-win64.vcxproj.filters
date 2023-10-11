@@ -48,9 +48,6 @@
     <ClInclude Include="params.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="polymer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="simdalloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -59,6 +56,12 @@
     </ClInclude>
     <ClInclude Include="local-getopt.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="polymer.h">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="umi.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

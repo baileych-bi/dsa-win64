@@ -25,6 +25,10 @@
     <ClInclude Include="cdn.h" />
     <ClInclude Include="defines.h" />
     <ClInclude Include="dna.h" />
+    <ClCompile Include="tests.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ExcludedFromBuild>
+    </ClCompile>
     <ClInclude Include="help.h" />
     <ClInclude Include="io.h" />
     <ClInclude Include="local-getopt.h" />
@@ -33,6 +37,7 @@
     <ClInclude Include="params.h" />
     <ClInclude Include="polymer.h" />
     <ClInclude Include="simdalloc.h" />
+    <ClInclude Include="tests.h" />
     <ClInclude Include="umi.h" />
   </ItemGroup>
   <ItemGroup>

@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\aa.cc" />
+    <ClCompile Include="..\align.cc" />
     <ClCompile Include="..\cdn.cc" />
     <ClCompile Include="..\dna.cc" />
     <ClCompile Include="..\polymer.cc" />

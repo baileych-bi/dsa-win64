@@ -23,10 +23,16 @@ const Nt Nt::N = Nt('N');
  */
 const char *Nt::clut = "-T-GA--C------N";
 const size_t Nt::indexes[8] = {0, 1, 2, 3, 0, 0, 0, 4};
+
 /* In-place complement the nucleotide sequence in [dna, dna+len) */
 void
 mm256_complement_dna(char *dna, size_t len) {
     constexpr const size_t chunk = sizeof (__m256i);
+
+    //use trick from seqc to perform aligned loads in the simd loop
+    size_t m = (reinterpret_cast<uintptr_t>(dna) + chunk - 1)/chunk*chunk - reinterpret_cast<uintptr_t>(dna);
+    for (; m; --m, --len, ++dna) *dna = Nt::clut[*dna & 0x0Fu]; 
+
     //because Nts contains only A, C, G, T, and N characters
     //we can shuffle based on their low nibbles to get the
     //complement
@@ -40,17 +46,19 @@ mm256_complement_dna(char *dna, size_t len) {
     //equivalent lookup table for scalar portion
     size_t i=0;
     for (; i+chunk < len; i += chunk) {
-        __m256i seq = _mm256_loadu_si256(reinterpret_cast<__m256i *>(dna+i));
+        __m256i seq = _mm256_load_si256(reinterpret_cast<__m256i *>(dna+i));
                 seq = _mm256_shuffle_epi8(clutv, seq);
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(dna+i), seq);
     }
-    for (; i < len; ++i) *(dna+i) = Nt::clut[static_cast<size_t>(*(dna+i)) & 0x0F];
+
+    for (; len; --len, ++dna) *dna = Nt::clut[*dna & 0x0Fu];
 }
 
 /* In-place reverse-complement the nucleotide sequence in [dna, dna+len) */
 void
 mm256_reverse_complement_dna(char *dna, size_t len) {
     constexpr const size_t chunk = sizeof(__m256i);
+
     //because Nts contains only A, C, G, and T characters
     //we can shuffle based on their low nibbles to get the
     //complement

@@ -15,8 +15,6 @@ PolymerBase::PolymerBase(const PolymerBase &p) {
     memcpy(buf_, p.buf_+p.lo_, p.size());
     lo_ = 0;
     hi_ = p.size();
-    //lo_ = p.lo_;
-    //hi_ = p.hi_;
 }
 
 PolymerBase::PolymerBase(const char *begin, const char *end) {

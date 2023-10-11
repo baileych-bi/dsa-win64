@@ -1,9 +1,9 @@
-CXX=clang++-12
+CXX=clang++
 CXXFLAGS= -D DSA_TARGET_LINUX -std=c++20 -stdlib=libc++ -pthread -mavx2
 
 # Project files
 SRCDIR = .
-SRCS = aa.cc abs.cc align.cc cdn.cc dna.cc help.cc io.cc main.cc mainfunctions.cc params.cc polymer.cc umi.cc
+SRCS = aa.cc abs.cc align.cc cdn.cc dna.cc help.cc io.cc main.cc mainfunctions.cc params.cc polymer.cc umi.cc tests.cc
 OBJS = $(SRCS:.cc=.o)
 DEPS = $(SRCS:.cc=.d)
 EXE = dsa
@@ -35,7 +35,7 @@ $(DBGEXE): $(DBGOBJS)
 
 -include $(DBGDEPS)
 
-$(DBGDIR)/%.o: $(SRCDIR)/%.cc makefile
+$(DBGDIR)/%.o: $(SRCDIR)/%.cc Makefile
 	$(CXX) $(CXXFLAGS) $(DBGCXXFLAGS) -MMD -MP -c $< -o $@
 
 # Release build
@@ -46,7 +46,7 @@ $(RELEXE): $(RELOBJS)
 
 -include $(RELDEPS)
 
-$(RELDIR)/%.o: $(SRCDIR)/%.cc makefile
+$(RELDIR)/%.o: $(SRCDIR)/%.cc Makefile
 	$(CXX) $(CXXFLAGS) $(RELCXXFLAGS) -MMD -MP -c $< -o $@
 
 # Misc rules

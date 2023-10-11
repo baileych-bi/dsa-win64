@@ -138,6 +138,7 @@ run_venn_diagram(int argc, char *argv[]) {
                 exit(EXIT_FAILURE);
                 break;
             default:
+                std::cerr << "unrecognized option -" << optopt << std::endl;
                 exit(EXIT_FAILURE); //should never happen
         }
     }
@@ -185,8 +186,6 @@ run_venn_diagram(int argc, char *argv[]) {
         sorted.end(),
         inclusion_cmp()
     );
-
-    std::cout << "checkpoint" << std::endl;
 
     struct DerefHash {
         size_t operator()(const std::vector<bool> *p) const { return std::hash<std::vector<bool>>{}(*p); }
@@ -261,6 +260,7 @@ run_extract_aas(int argc, char *argv[]) {
                 break;
             case 'o':
                 output_filename = optarg;
+                break;
             case '?':
                 std::cerr << "unrecognized option: -" << optopt << std::endl;
                 break;
