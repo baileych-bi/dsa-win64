@@ -2,7 +2,7 @@
   * \section Overview
   * dsa analyzes paired-end reads that encode a protein sequence, aligns the reads to user-supplied
   * template(s), and outputs those alignments and various statistics about the mutations.<br/>
-  * The current implementation relies on AVX2 instructions and requires relatively recent x86 CPUs.
+  * The current implementation relies on AVX2 instructions and requires somewhat recent x86 CPUs.
   */
 #include <immintrin.h>
 
@@ -39,7 +39,7 @@ main(int argc, char *argv[]) {
         exit (EXIT_FAILURE);
     }
 
-    if (argc == 2 && std::string("test") == argv[1]) {
+    if (argc == 2 && !std::strcmp("test", argv[1])) {
         try {
             test::run_all();
         } catch (test::test_failed_error &ex) {
@@ -128,7 +128,7 @@ main(int argc, char *argv[]) {
         try {
             fwexs.push_back(UMIExtractor(ref));
         } catch (std::exception &) {
-            std::cerr << "fw_ref was an invalid nucleotide sequence (see --help)" << std::endl;
+            std::cerr << "fw_ref '" << ref << "' is not a valid reference sequence (see --help)" << std::endl;
             exit (EXIT_FAILURE);
         }
     }
@@ -138,7 +138,7 @@ main(int argc, char *argv[]) {
         try {
             rvexs.push_back(UMIExtractor(ref));
         } catch (std::exception &) {
-            std::cerr << "rv_ref was an invalid nucleotide sequence (see --help)" << std::endl;
+            std::cerr << "rv_ref '" << ref << "' is not a valid reference sequence (see --help)" << std::endl;
             exit (EXIT_FAILURE);
         }
     }
@@ -146,8 +146,9 @@ main(int argc, char *argv[]) {
     //Filling out 'alignments' is the ultimate goal of our program.
     //These GroupAlignments represent the Needleman-Wunsch alignments
     //of translated paired or unpaired read data to the user-supplied
-    //template(s), or simply the extracted sequences if no template
-    //information is given
+    //template(s)
+    //If no templates are given, dsa will just return UMI-grouped
+    //lists of sequences found between the references
     std::vector<GroupAlignment> alignments;
 
     auto clock_start = std::chrono::high_resolution_clock::now();
@@ -196,11 +197,12 @@ main(int argc, char *argv[]) {
         std::move(rvreads),
         fwexs, rvexs, p, log);
 
-    fwreads.clear(); rvreads.clear();
+    fwreads.clear();
+    rvreads.clear();
 
     //Sometimes data are low enough quality that the 3' ends are too hard to
     //align or the PCR template may be too long to sequence. In these cases,
-    //we can skip assembling the read pairs and process them anyway. 
+    //we can skip assembling the read pairs and process them anyway.
     if (p.skip_assembly_flag) {
         for (ReadPair &rp : qcd_pairs) {
             rp.rv.barcode = rp.fw.barcode;
@@ -398,7 +400,7 @@ main(int argc, char *argv[]) {
 
         //convert counts to frequencies
         for (size_t c=0; c<substitutions.cols(); ++c) {
-            if (column_totals[c] == 0.) continue; //divide by 0 -> 0
+            if (column_totals[c] == 0.) continue; //treat 0/0 as 0
             for (size_t r=0; r<substitutions.rows(); ++r) substitutions.elem(r, c) /= column_totals[c];
         }
 

@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS= -D DSA_TARGET_LINUX -std=c++20 -stdlib=libc++ -pthread -mavx2
+CXXFLAGS= -D DSA_TARGET_LINUX -std=c++20 -mavx2 -stdlib=libc++ -pthread
 
 # Project files
 SRCDIR = .

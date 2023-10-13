@@ -46,7 +46,7 @@ mm256_complement_dna(char *dna, size_t len) {
     //equivalent lookup table for scalar portion
     size_t i=0;
     for (; i+chunk < len; i += chunk) {
-        __m256i seq = _mm256_load_si256(reinterpret_cast<__m256i *>(dna+i));
+        __m256i seq = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(dna+i));
                 seq = _mm256_shuffle_epi8(clutv, seq);
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(dna+i), seq);
     }
@@ -78,11 +78,11 @@ mm256_reverse_complement_dna(char *dna, size_t len) {
 
     size_t i=0;
     for (; i+2*chunk<=len; i += chunk, len -= chunk) {
-        __m256i lseq = _mm256_loadu_si256(reinterpret_cast<__m256i *>(dna+i        ));
+        __m256i lseq = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(dna+i        ));
                 lseq = _mm256_shuffle_epi8(clutv, lseq);
                 lseq = _mm256_shuffle_epi8(lseq, rlutv);
                 lseq = _mm256_permute4x64_epi64(lseq, 0b01'00'11'10);
-        __m256i rseq = _mm256_loadu_si256(reinterpret_cast<__m256i *>(dna+len-chunk));
+        __m256i rseq = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(dna+len-chunk));
                 rseq = _mm256_shuffle_epi8(clutv, rseq);
                 rseq = _mm256_shuffle_epi8(rseq, rlutv);
                 rseq = _mm256_permute4x64_epi64(rseq, 0b01'00'11'10);
@@ -90,7 +90,7 @@ mm256_reverse_complement_dna(char *dna, size_t len) {
         _mm256_storeu_si256(reinterpret_cast<__m256i *>(dna+len-chunk), lseq);
     }
     for (; i+chunk<=len; i+= chunk) {
-        __m256i rseq = _mm256_loadu_si256(reinterpret_cast<__m256i *>(dna+len-chunk));
+        __m256i rseq = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(dna+len-chunk));
                 rseq = _mm256_shuffle_epi8(clutv, rseq);
                 rseq = _mm256_shuffle_epi8(rseq, rlutv);
                 rseq = _mm256_permute4x64_epi64(rseq, 0b01'00'11'10);

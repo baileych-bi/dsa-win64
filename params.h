@@ -17,17 +17,27 @@ namespace fs = std::filesystem;
 
 namespace help {
 
+/** Supported means of printing nucleotide data. */
 enum class CodonOutput {
-    None,
-    Ascii,
-    Horizontal,
-    Vertical 
+    None,        //< Don't print nucleotide/codon data
+    Ascii,       //< Print single char representation of codons
+    Horizontal,  //< Print dna single-line sequences rather than codon sequences
+    Vertical     //< Print three-row vertically-aligned dna sequences 
 };
 
-std::optional<CodonOutput> codon_output_from_string(const char *s);
+/** Maybe get a CodonOuput enum value from a string. */
+std::optional<CodonOutput>
+codon_output_from_string(const char *s);
 
+/** Alignment templates can be dna sequences (packed as Cdns),
+* amino acid sequences (Aas), or special files containing lists
+* of sequences (std::path to a .fasta file)
+*/
 using TemplateSource = std::variant<fs::path, bio::Cdns, bio::Aas>;
 
+/** Params holds the various user-defined analysis settings determined by the command line
+* arguments.
+*/
 struct Params {
     bool split_template_requested() const { return split_template_regex.mark_count() > 0; }
 

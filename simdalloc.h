@@ -28,15 +28,17 @@
 #ifdef DSA_TARGET_WIN64
 #include <malloc.h>
 namespace detail {
-inline void* dsa_aligned_alloc(size_t alignment, size_t n) {
+
+inline void *
+dsa_aligned_alloc(size_t alignment, size_t n) {
     return _aligned_malloc(n, alignment);
-    //return malloc(n);
 }
 
-inline void dsa_aligned_free(void* p) {
+inline void
+dsa_aligned_free(void* p) {
     return _aligned_free(p);
-    //return free(p);
 }
+
 }; // namespace detail
 #elif defined(DSA_TARGET_LINUX)
 #include <cstdlib>

@@ -14,6 +14,7 @@ namespace bio {
 
 class TemplateDatabase;
 
+/** Class similar to Python's collections.Counter */
 template<typename T, typename Hash=std::hash<T>, typename KeyEqual=std::equal_to<T>>
 struct Counter {
   using iterator       = typename std::unordered_map<T, size_t, Hash, KeyEqual>::const_iterator;
@@ -33,6 +34,7 @@ private:
   std::unordered_map<T, size_t, Hash, KeyEqual> counts_;
 };
 
+/** Maintains a count of sequences dropped from analysis for various reasons. */
 struct ParseLog {
     size_t filter_invalid_chars            = 0;
     size_t filter_no_fw_umi                = 0;
@@ -61,6 +63,9 @@ struct ParseLog {
     }
 };
 
+/** Enumerated template used for alignment. Multiple templates are used with --split
+    that breaks into different parts (e.g. of an antibody) to align to different
+    templates. */
 struct AlignmentTemplate {
     size_t id = 0;
     std::vector<std::string> labels;
@@ -70,13 +75,20 @@ struct AlignmentTemplate {
     std::string label(const std::string &delim=" / ") const;
 };
 
+/** GroupAlignment represents an alignment of a UMI group to a particular template.
+* Populating a vector of GroupAlignments is basically the goal of dsa.
+*/
 struct GroupAlignment {
-    size_t umi_group_size = 0;
-    std::shared_ptr<AlignmentTemplate> templ;
-    std::string barcode;
-    std::string alignment;
-    std::string cdns;
+    size_t umi_group_size = 0;                //< Number of PCR reads in this umi group
+    std::shared_ptr<AlignmentTemplate> templ; //< The AlignmentTemplate
+    std::string barcode;                      //< The UMI nucleotide sequence
+    std::string alignment;                    //< The alignment itself (as amino acids)
+    std::string cdns;                         //< The alignment itself (as codons)
 
+    /** GroupAlignments can be concatenated. This is useful if, for example,
+    * The left and right halves of the reads are aligned to different templates
+    * but we want to reconstruct the entire alignment in a single string.
+    */
     GroupAlignment &operator+=(const GroupAlignment &g) {
       alignment += g.alignment;
       cdns      += g.cdns;
@@ -84,13 +96,14 @@ struct GroupAlignment {
     }
 };
 
+/** Store the counts of coding and silet mutations at each codon position. */
 struct MutationCount {
     MutationCount() = default;
     MutationCount(size_t cols);
 
-    std::vector<unsigned> synonymous;
-    std::vector<unsigned> nonsynonymous;
-    std::vector<unsigned> total;
+    std::vector<unsigned> synonymous;    //< Position-wise counts of silent mutations
+    std::vector<unsigned> nonsynonymous; //< Position-wise counts of coding mutations
+    std::vector<unsigned> total;         //< Total number of sequences examined at each position
 
     MutationCount &operator=(const MutationCount &) = default;
     MutationCount  operator+(const MutationCount &) const;
