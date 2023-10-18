@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dsa-win64", "dsa-win64.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utils", "utils\utils.vcxproj", "{ABB8DE1F-7045-41A2-9768-D617D33A00C6}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "dsa-setup", "..\dsa-setup\dsa-setup.vdproj", "{1692CDC9-9F67-4471-A25D-3E84586A0DD0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,11 @@ Global
 		{ABB8DE1F-7045-41A2-9768-D617D33A00C6}.Release|x64.Build.0 = Release|x64
 		{ABB8DE1F-7045-41A2-9768-D617D33A00C6}.Release|x86.ActiveCfg = Release|Win32
 		{ABB8DE1F-7045-41A2-9768-D617D33A00C6}.Release|x86.Build.0 = Release|Win32
+		{1692CDC9-9F67-4471-A25D-3E84586A0DD0}.Debug|x64.ActiveCfg = Debug
+		{1692CDC9-9F67-4471-A25D-3E84586A0DD0}.Debug|x86.ActiveCfg = Debug
+		{1692CDC9-9F67-4471-A25D-3E84586A0DD0}.Release|x64.ActiveCfg = Release
+		{1692CDC9-9F67-4471-A25D-3E84586A0DD0}.Release|x64.Build.0 = Release
+		{1692CDC9-9F67-4471-A25D-3E84586A0DD0}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
