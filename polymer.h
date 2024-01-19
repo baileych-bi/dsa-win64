@@ -166,7 +166,7 @@ public:
         inline T* inc(T* p, difference_type d)  const { return p+d; }
         inline T* dec(T* p, difference_type d)  const { return p-d; }
         inline T* get(T* p)                     const { return p  ; }
-        inline difference_type dist(T *p, T *q) const {return p-q; } 
+        inline difference_type dist(T *p, T *q) const { return p-q; } 
     };
 
     template<typename T, typename difference_type>
@@ -174,7 +174,7 @@ public:
         inline T* inc(T* p, difference_type d)  const { return p-d; }
         inline T* dec(T* p, difference_type d)  const { return p+d; }
         inline T* get(T* p)                     const { return p-1; }
-        inline difference_type dist(T *p, T *q) const {return q-p; } 
+        inline difference_type dist(T *p, T *q) const { return q-p; } 
     };
 
     template<bool is_mut, bool forward=true>
