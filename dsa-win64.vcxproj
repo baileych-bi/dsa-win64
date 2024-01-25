@@ -56,6 +56,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Doxyfile" />
+    <None Include="installers\dsa-win64.msi" />
     <None Include="makefile" />
   </ItemGroup>
   <ItemGroup>

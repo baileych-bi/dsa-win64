@@ -112,6 +112,7 @@
     <None Include="makefile">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="installers\dsa-win64.msi" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.txt">
