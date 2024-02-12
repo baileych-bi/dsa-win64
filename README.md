@@ -29,6 +29,13 @@ $sudo cp bin/dsa /usr/local/bin
 $dsa --help
 ```
 
+## Usage
+
+The dsa documentation available from running dsa with the --help option
+is quite thorough. Examples of scripts for batch analysis using Powershell
+and Bash are available in the 'example' folder along with sample .fastq files
+(unzip after downloading) and sample output.
+
 ## Author
 
 Charles C Bailey
