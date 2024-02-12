@@ -56,6 +56,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Doxyfile" />
+    <None Include="example\dsa-command-linux.sh" />
+    <None Include="example\dsa-command-windows.ps1" />
     <None Include="installers\dsa-win64.msi" />
     <None Include="makefile" />
   </ItemGroup>
