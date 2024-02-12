@@ -115,6 +115,8 @@
     <None Include="installers\dsa-win64.msi" />
     <None Include="example\dsa-command-linux.sh" />
     <None Include="example\dsa-command-windows.ps1" />
+    <None Include="example\S16R1.zip" />
+    <None Include="example\S16R2.zip" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.md">
