@@ -248,6 +248,7 @@ Orf::contains_ptc() const {
     return std::find(aas.begin(), aas.end(), Aa::STOP) != aas.end();
 }
 
+/*
 void
 nw_align_aas(const Aas &q, const Aas &t, const Matrix<int32_t> &match, int32_t gapp, Alignment &result) {
     result.clear();
@@ -309,6 +310,7 @@ nw_align_aas(const Aas &q, const Aas &t, const Matrix<int32_t> &match, int32_t g
     }
     std::reverse(result.aligned_query.begin(), result.aligned_query.end());
 }
+*/
 
 std::ostream &
 operator<<(std::ostream &os, const Read &rd) {

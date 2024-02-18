@@ -595,15 +595,17 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
             const Aas  &template_aas  = dbs[i]->get_aas(template_id);
             const Cdns &template_cdns = dbs[i]->get_codons(template_id);
 
-            float max_score = static_cast<float>(
-                dbs[i]->codon_data_available()
-                    ? nw_self_align_score<Cdn>(template_cdns, CDNSUBS )
-                    : nw_self_align_score<Aa> (template_aas , BLOSUM62)
-            );
-
-            if (ragged_ends) max_score -= dbs[i]->gap_penalty()
-                                        * std::abs(static_cast<int32_t>( orfs[i].aas.size()) - 
-                                                   static_cast<int32_t>(template_aas.size()));
+            float max_score = 0.0f;
+            if (ragged_ends) {
+                max_score = dbs[i]->codon_data_available()
+                    ? nw_self_align_score<Cdn>(orfs[i].cdns, CDNSUBS)
+                    : nw_self_align_score<Aa>(orfs[i].aas, BLOSUM62);
+                max_score -= dbs[i]->gap_penalty() * std::abs(int64_t(orfs[i].aas.size()) - int64_t(template_aas.size()));
+            } else {
+                max_score = dbs [i]->codon_data_available()
+                    ? nw_self_align_score<Cdn>(template_cdns, CDNSUBS)
+                    : nw_self_align_score<Aa>(template_aas, BLOSUM62);
+            }
 
             if (aln.score / max_score < params.min_alignment_score) {
                 ++log.filter_bad_alignment;

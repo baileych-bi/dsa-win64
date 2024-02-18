@@ -56,6 +56,25 @@ using help::Params;
 
 int
 main(int argc, char *argv[]) {
+    /*
+    Aas qry = "PRDCGCKPCICSVPEVSSVFIFPPKPKDVLTITLTPKVTCVVLDFSKDDPEVHFSWFVDDVEVHTAQTKPREEQINSTFRSVSELPI";
+    Aas tpl = "PRDCGCKPCICTVPEVSSVFIFPPKPKDVLTITLTPKVTCVVVDISKDDPEVQFSWFVDDVEVHTAQTKPREEQINSTFRSVSELPIMHQDWLNGKEFKCRVNSAAFPAPIEKTISKTKGRPKAPQVYTIPPPKEQMAKDKVSLTCMITNFFPEDITVEWQWNGQ";
+
+    Alignment aln;
+    nw_align<Aa>(qry, tpl, BLOSUM62, 4, aln, false);
+
+    int32_t qry_self_score = nw_self_align_score<Aa>(qry, BLOSUM62);
+    int32_t tpl_self_score = nw_self_align_score<Aa>(tpl, BLOSUM62);
+
+    std::cout << "self-score qry: " << qry_self_score << std::endl;
+    std::cout << "self-score tpl: " << tpl_self_score << std::endl;
+    std::cout << "adjusted self score: " << (tpl_self_score - 4 * std::abs(int32_t(tpl.size()) - int32_t(qry.size()))) << std::endl;
+    std::cout << "score: " << aln.score << std::endl;
+    std::cout << "align: " << aln.aligned_query << std::endl;
+
+    exit(EXIT_SUCCESS);
+    */
+
     if (argc < 2) {
         std::cerr << "Deep Sequencing Analysis version " << VERSION_STRING << ": "
                   << "run dsa --help for instructions." << std::endl;

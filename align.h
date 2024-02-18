@@ -205,12 +205,14 @@ Alignment::build_string(typename Polymer<M>::const_iterator q_lo,
   * @param gapp the gap extension penalty
   * @param result stores the results of the alignment
   */
+/*
 void
 nw_align_aas(const Aas &query, 
              const Aas &templ, 
              const Matrix<int32_t> &substitution_matrix, 
              int32_t gapp,
              Alignment &result);
+*/
 
 /** Generic implementation of Needleman-Wunsch for Polymers of monomer type M.
   *
@@ -264,13 +266,17 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
             cell.move  = Cell::Move::MATCH;
             cell.score = trace.elem(i, j).score + match.elem(m, n);
 
-            int32_t gappa_score = trace.elem(i+1, j).score - gapp;
+            int32_t gappa_score = trace.elem(i + 1, j).score - gapp;
+            if (i && i != q_size - 1 && trace.elem(i + 1, j).move != Cell::Move::GAP_Q) gappa_score -= 1;
+            
             if (gappa_score > cell.score) {
                 cell.score = gappa_score;
                 cell.move = Cell::Move::GAP_Q;
             }
 
-            int32_t gappb_score = trace.elem(i, j+1).score - gapp;
+            int32_t gappb_score = trace.elem(i, j + 1).score - gapp;
+            if (j && j != t_size - 1 && trace.elem(i, j + 1).move != Cell::Move::GAP_T) gappb_score -= 1;
+
             if (gappb_score > cell.score) {
                 cell.score = gappb_score;
                 cell.move  = Cell::Move::GAP_T;
