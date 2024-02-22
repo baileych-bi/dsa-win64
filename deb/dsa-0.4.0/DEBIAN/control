@@ -1,0 +1,9 @@
+Package: dsa
+Version: 0.4.0
+Section: base
+Priority: optional
+Architecture: i686
+Depends:
+Maintainer: Charles C Bailey baileych@broadinstitute.org
+Description: dsa
+    Run dsa --help for instructions and examples

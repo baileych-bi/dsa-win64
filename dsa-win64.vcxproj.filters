@@ -117,6 +117,7 @@
     <None Include="example\dsa-command-windows.ps1" />
     <None Include="example\S16R1.zip" />
     <None Include="example\S16R2.zip" />
+    <None Include="installers\dsa-0.4.0.deb" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.md">
