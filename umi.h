@@ -91,6 +91,8 @@ public:
     const std::string &sequence() const { return sequence_; } ///< The original reference sequence as supplied to the constructor.
     const std::string & pattern() const { return  pattern_; } ///< The regular expression string created from the reference sequence.
     const std::regex  &   regex() const { return    regex_; } ///< The regular exrpession object used for matching and extracting UMIs.
+
+    void complement();
 };
 
 }; //namespace bio

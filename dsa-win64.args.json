@@ -3,12 +3,28 @@
   "Id": "607d7ede-83d5-4a51-8a8f-a456840072cf",
   "Items": [
     {
+      "Id": "09c518fa-ca7b-4ee7-8003-904f811c05b1",
+      "Command": "-r GAAGAGACCGTCACCTGCGT"
+    },
+    {
       "Id": "a9eff9e0-c82e-44d5-a2f7-00ec2d85f7f7",
       "Command": "-g 2"
     },
     {
+      "Id": "4c26f127-6098-4c11-894c-0fc36b0d99d0",
+      "Command": "\"\""
+    },
+    {
       "Id": "58d7ca6e-de8b-40d1-afd1-3adc1437b876",
       "Command": "-f nnnnnnAGTnnnnnnGAAGGACGCCGAGACAACA"
+    },
+    {
+      "Id": "3ff22060-fdc8-4628-ba71-9b64c0e6290a",
+      "Command": "-t EVQLVESGGGLVQAGGFLRLSCELRGSIFNQYAMAWFRQAPGKEREFVAGMGAVPHYGEFVKGRFTISRDNAKSTVYLQMSSLKPEDTAIYFCARSKSTYISYNSNGYDYWGRG"
+    },
+    {
+      "Id": "34bb11b9-4ec4-4def-b6dc-055729c6737a",
+      "Command": "C:\\Users\\cbail\\Downloads\\ix1R1.fastq"
     },
     {
       "Id": "eb2d1cb8-7f76-432e-b9ea-8bae57ce9504",

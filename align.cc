@@ -78,7 +78,14 @@ Read::assemble(Read &&fw, Read &&rv, size_t min_overlap_size, size_t max_mismatc
 
     Overlap ol = find_overlapv_256(fw.dna.c_data(), fw.dna.size(), 
                                    rv.dna.c_data(), rv.dna.size());
-    if (ol.overlap < min_overlap_size || ol.mismatches > max_mismatches) return rd;
+    if (ol.overlap < min_overlap_size || ol.mismatches > max_mismatches) {
+        std::clog << "Found non-overlapping paired reads:" << std::endl;
+        std::clog << "Fw:" << std::endl;
+        std::clog << fw.dna.c_str() << std::endl;
+        std::clog << "Rv:" << std::endl;
+        std::clog << rv.dna.c_str() << std::endl;
+        return rd;
+    }
 
     std::reverse(rv.qual.begin(), rv.qual.end());
 

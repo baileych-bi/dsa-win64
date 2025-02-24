@@ -1,5 +1,8 @@
+VERSION_MAJOR = 1
+VERSION_MINOR = 0
+
 CXX=clang++
-CXXFLAGS= -D DSA_TARGET_LINUX -std=c++20 -mavx2 -stdlib=libc++ -pthread
+CXXFLAGS= -D VERSION_MAJOR=$(VERSION_MAJOR) -D VERSION_MINOR=$(VERSION_MINOR) -D DSA_TARGET_LINUX -std=c++23 -mavx2 -pthread
 
 # Project files
 SRCDIR = .

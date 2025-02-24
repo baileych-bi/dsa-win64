@@ -81,7 +81,7 @@ main(int argc, char *argv[]) {
         exit (EXIT_FAILURE);
     }
 
-    if (argc == 2 && !std::strcmp("test", argv[1])) {
+    if (argc == 2 && std::strcmp("test", argv[1]) == 0) {
         try {
             test::run_all();
         } catch (test::test_failed_error &ex) {
@@ -105,7 +105,7 @@ main(int argc, char *argv[]) {
 
     //std::cerr << "p.template_sources.size()==" << p.template_sources.size() << std::endl;
     if (p.skip_assembly_flag && p.template_sources.size() > 1) {
-        std::cerr << "skipping assembly (i.e. -x, --skip_assembly) is incompatible with "
+        std::cerr << "--skip_assembly is incompatible with "
                   << "split templates and multiple template alignment" << std::endl;
         exit (EXIT_FAILURE);
     }
@@ -160,7 +160,7 @@ main(int argc, char *argv[]) {
     }
 
     if (p.skip_assembly_flag && (template_dbs.size() * template_dbs.front()->size() > 1)) {
-        std::cerr << "skipping assembly (i.e. -x, --skip_assembly) is incompatible with "
+        std::cerr << "--skip_assembly is incompatible with "
                   << "split templates and multiple template alignment" << std::endl;
         exit (EXIT_FAILURE);
     }
@@ -199,31 +199,36 @@ main(int argc, char *argv[]) {
     std::vector<Read> fwreads, rvreads; //at first we hold the reads from the two fastq files separately
 
     //parse the fastq files into Read data structures
-    try {
-        ConstMapping fwmap = ConstMapping::map(p.fw_filename);
-        fwreads = extract_read_data(fwmap);
-        fwmap.unmap();
-    } catch (std::exception &) {
-        std::cerr << "error parsing '" << p.fw_filename << "'" << std::endl;
-        exit (EXIT_FAILURE);
+    if (!p.fw_filename.empty()) {
+        try {
+            ConstMapping fwmap = ConstMapping::map(p.fw_filename);
+            fwreads = extract_read_data(fwmap);
+            fwmap.unmap();
+        } catch (std::exception &) {
+            std::cerr << "error parsing '" << p.fw_filename << "'" << std::endl;
+            exit (EXIT_FAILURE);
+        }
     }
 
-    try {
-        ConstMapping rvmap = ConstMapping::map(p.rv_filename);
-        rvreads = extract_read_data(rvmap);
-        rvmap.unmap();
-    } catch (std::exception &) {
-        std::cerr << "error parsing '" << p.rv_filename << "'" << std::endl;
-        exit (EXIT_FAILURE);
+    if (!p.rv_filename.empty()) { //ReadsAsIs expects only one input file
+        try {
+            ConstMapping rvmap = ConstMapping::map(p.rv_filename);
+            rvreads = extract_read_data(rvmap);
+            rvmap.unmap();
+        } catch (std::exception &) {
+            std::cerr << "error parsing '" << p.rv_filename << "'" << std::endl;
+            exit (EXIT_FAILURE);
+        }
     }
 
-    //make sure we got the same number of forward and reverse reads
-    if (fwreads.size() != rvreads.size()) {
+
+    //if we're doing paired reads, make sure we got the same number of forward and reverse reads
+    if ((!p.fw_filename.empty() && !p.rv_filename.empty()) && (fwreads.size() != rvreads.size())) {
         std::cerr << "read count disagreement between " << p.fw_filename << " and " << p.rv_filename << std::endl;
-        exit (EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
-    const size_t total_reads = fwreads.size();
+    const size_t total_reads = fwreads.size() > rvreads.size() ? fwreads.size() : rvreads.size();
 
     /* uncomment to limit reads for testing purposes
     const size_t max_reads = 10000;
@@ -231,21 +236,22 @@ main(int argc, char *argv[]) {
     rvreads.resize(max_reads);
     */
 
-    //Perform qc and get back read pairs
-    //QC includes locating the primers, extracting the UMI,
-    //and trimming low-quality bases from the 3' ends of the reads.
-    std::vector<ReadPair> qcd_pairs = qc_reads(
-        std::move(fwreads),
-        std::move(rvreads),
-        fwexs, rvexs, p, log);
-
-    fwreads.clear();
-    rvreads.clear();
 
     //Sometimes data are low enough quality that the 3' ends are too hard to
     //align or the PCR template may be too long to sequence. In these cases,
     //we can skip assembling the read pairs and process them anyway.
-    if (p.skip_assembly_flag) {
+    if (p.skip_assembly_flag) { //note: skip_assembly_flag => fwreads, rvreads, fwrefs, and rvrefs all exist
+        //Perform qc and get back read pairs
+        //QC includes locating the primers, extracting the UMI,
+        //and trimming low-quality bases from the 3' ends of the reads.
+        std::vector<ReadPair> qcd_pairs = qc_reads(
+            std::move(fwreads),
+            std::move(rvreads),
+            fwexs, rvexs, p, log);
+
+        fwreads.clear();
+        rvreads.clear();
+
         for (ReadPair &rp : qcd_pairs) {
             rp.rv.barcode = rp.fw.barcode;
             fwreads.push_back(std::move(rp.fw));
@@ -258,6 +264,9 @@ main(int argc, char *argv[]) {
         rvreads = umi_collapse(std::move(rvreads), p, log, true);
 
         //translate
+        if (p.reverse_complement_flag) {
+            parallel_for_each(fwreads.begin(), fwreads.end(), [](Read & read){ read.reverse_complement(); });
+        }
         std::vector<Orf> nterm = translate_and_filter_ptcs(std::move(fwreads), p, log, false);
         fwreads.clear(); fwreads.shrink_to_fit();
 
@@ -266,6 +275,10 @@ main(int argc, char *argv[]) {
         vecvec<Orf> nsplits = split_orfs(std::move(nterm), p, log);
         nterm.clear(); nterm.shrink_to_fit();
 
+        //translate
+        if (p.reverse_complement_flag) {
+            parallel_for_each(rvreads.begin(), rvreads.end(), [](Read & read){ read.reverse_complement(); });
+        }
         std::vector<Orf> cterm = translate_and_filter_ptcs(std::move(rvreads), p, log, true);
         rvreads.clear(); rvreads.shrink_to_fit();
 
@@ -336,13 +349,53 @@ main(int argc, char *argv[]) {
         alignments.insert(alignments.cend(),
                           std::make_move_iterator(rvaln.rbegin()),
                           std::make_move_iterator(rvaln.rend()));
-    } else { //assembling the read ends makes life much easier
-        fwreads.shrink_to_fit(); rvreads.shrink_to_fit();
+    } else {
+        //In general, assembling the read ends makes life much easier, however, we now have 3 possible scenarios:
+        //1) we have paired reads (Illumina) that need assembling    <=> fwreads, revreads, fwrefs, rvrefs exist 
+        //2) we ragged ended reads (usually from bad Illumina data)  <=> only fwreads, fwrefs exist
+        //3) we have full reads in a single file (Nanopore data)     <=> only fwreads, fwrefs, rvrefs exist
+        //For now, our goal will be to fill the 'reads' vector, by assembling, reverse complementing, etc.
+        std::vector<Read> reads;
+        bool ragged_ends = false;
 
-        std::vector<Read> reads = assemble_reads(std::move(qcd_pairs), p, log);
-                          reads = umi_collapse(std::move(reads), p, log, false);
-        std::vector<Orf>  orfs  = translate_and_filter_ptcs(std::move(reads), p, log, false);
+        //std::cout << "choosing scenario" << std::endl;
+        //Scenario 1: assemble paired reads
+        if (!fwreads.empty() && !rvreads.empty() && !fwexs.empty() && !rvexs.empty()) {
+            //std::cout << "Scenario 1!" << std::endl;
+            std::vector<ReadPair> qcd_pairs = qc_reads(
+                std::move(fwreads),
+                std::move(rvreads),
+                fwexs, rvexs, p, log);
 
+
+            fwreads.clear(); rvreads.clear();
+            fwreads.shrink_to_fit(); rvreads.shrink_to_fit();
+
+            reads = assemble_reads(std::move(qcd_pairs), p, log);
+            reads = umi_collapse(std::move(reads), p, log, false);
+        }
+        //Scenario 2: ragged ended reads
+        else if (!fwreads.empty() && rvreads.empty() && !fwexs.empty() && rvexs.empty()) {
+            ragged_ends = true;
+            //std::cout << "Scenario 2!" << std::endl;
+            reads = qc_reads(std::move(fwreads), fwexs, p, log);
+        } 
+        //Scenario 3: complete reads in forward orientation
+        else if (!fwreads.empty() && rvreads.empty() && !fwexs.empty() && !rvexs.empty()) {
+            //std::cout << "Scenario 3!" << std::endl;
+            reads = qc_reads(std::move(fwreads), fwexs, rvexs, p, log);
+        }
+        //Scenario 4: allegedly impossible
+        else {
+            std::cerr << "Error! Scenario 4 encountered! This is a bug!" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if (p.reverse_complement_flag) {
+            parallel_for_each(reads.begin(), reads.end(), [](Read &read){ read.reverse_complement(); });
+        }
+        std::vector<Orf> orfs = translate_and_filter_ptcs(std::move(reads), p, log, false);
+ 
         //Note that the split/multitemplate code path and the sigle template code
         //path are the same. If there is no regex for splitting, split_orfs just turns
         //the 1D orfs vector, shape=(orfs.size(), ) into a 2D vector of shape=(orfs.size(), 1)
@@ -361,10 +414,10 @@ main(int argc, char *argv[]) {
             std::move(splits),
             template_dbs,
             p,
-            log
+            log,
+            ragged_ends
         );
     }
-
     std::vector<std::shared_ptr<AlignmentTemplate>> templates;
     std::vector<Matrix<float>> substitution_matrices;
 
@@ -468,7 +521,7 @@ main(int argc, char *argv[]) {
     
     if (!p.no_header_flag) {
         std::cout << "#Settings#" << std::endl;
-        std::cout << "#program version\t" << VERSION << std::endl;
+        std::cout << "#program version\tv" << VERSION << std::endl;
         std::cout << "#run complete\t" << std::put_time(&end_tm, "%Y-%m-%d %H:%M:%S") << std::endl;
         std::cout << "#wall clock time\t" << std::setw(2) << std::setfill('0') << hh << ":"
                                           << std::setw(2) << std::setfill('0') << mm << ":"
@@ -492,7 +545,8 @@ main(int argc, char *argv[]) {
         }
         std::cout << "#minimum 3 prime quality (-q, --min_qual)\t" << p.tp_qual_min << std::endl;
         std::cout << "#minimum umi group size (-g, --min_umi_grp)\t" << p.min_umi_group_size << std::endl;
-        std::cout << "#reads aligned to template separately (-x, --skip_assembly)\t" << p.skip_assembly_flag << std::endl;
+        std::cout << "#reads aligned to template separately (-x, --skip_assembly)\t" << (p.skip_assembly_flag) << std::endl;
+        std::cout << "#reverse complement before alignment (-k --reverse_complement)\t" << (p.reverse_complement_flag) << std::endl;
         std::cout << "#minimum nucleotide alignment overlap (-v, --min_overlap)\t" << p.min_overlap << std::endl;
         std::cout << "#maximum nucleotide mismatches allowed (-m, --max_mismatch)\t" << p.max_mismatches << std::endl;
         std::cout << "#minimum template alignment score (-a, --min_aln)\t" << p.min_alignment_score << std::endl;

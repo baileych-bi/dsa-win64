@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "polymer.h"
 
 #include <array>
+#include <stdint.h>
 #include <optional>
 
 namespace bio {

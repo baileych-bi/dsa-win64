@@ -22,8 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <immintrin.h>
-
 #include <iostream>
+#include <stdint.h>
 
 #include "dna.h"
 #include "cdn.h"

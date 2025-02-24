@@ -120,13 +120,15 @@ struct Cell {
         GAP_Q = 1, ///< A gap was introduced in the query.
         GAP_T = 2  ///< A gap was introduced in the template.
     };
-    int32_t score = 0;       ///< The maximum possible alignment score at this location.
+    int32_t  score   = 0;     ///< The maximum possible alignment score at this location.
+    uint32_t matches = 0;     ///< The number of MATCHes contributing to the score in this cell
     Move move = Move::MATCH; ///< The path taken from the previous Cell.
 };
 
 /** The results of a Needleman-Wunsch alignment. */
 struct Alignment {
-    int32_t score = 0;         ///< The global alignment score.
+    int32_t score    = 0;      ///< The global alignment score.
+    uint32_t matches = 0;      ///< The number of matches contributing to the alignment score
     Matrix<Cell> traceback;    ///< The traceback matrix.
     std::string aligned_query; ///< A gapped string showing elements in the query that align with those in the template.
 
@@ -262,9 +264,13 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
         for (size_t j = 0; j < t_size; ++j) {
             size_t m = t_lo[j].index();
 
-            Cell cell;
-            cell.move  = Cell::Move::MATCH;
-            cell.score = trace.elem(i, j).score + match.elem(m, n);
+            //Cell cell;
+            //cell.move    = Cell::Move::MATCH;
+            //cell.score   = trace.elem(i, j).score + match.elem(m, n);
+            Cell cell = trace.elem(i, j);
+            cell.move = Cell::Move::MATCH;
+            cell.score += match.elem(m, n);
+            cell.matches += 1;
 
             int32_t gappa_score = trace.elem(i + 1, j).score - gapp;
             if (i && i != q_size - 1 && trace.elem(i + 1, j).move != Cell::Move::GAP_Q) gappa_score -= 1;
@@ -272,6 +278,7 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
             if (gappa_score > cell.score) {
                 cell.score = gappa_score;
                 cell.move = Cell::Move::GAP_Q;
+                cell.matches -= 1;
             }
 
             int32_t gappb_score = trace.elem(i, j + 1).score - gapp;
@@ -280,12 +287,14 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
             if (gappb_score > cell.score) {
                 cell.score = gappb_score;
                 cell.move  = Cell::Move::GAP_T;
+                cell.matches -= 1;
             }
 
             trace.elem(i+1, j+1) = cell;
         }
     }
-    result.score = trace.elem(q_size, t_size).score;
+    result.score   = trace.elem(q_size, t_size).score;
+    result.matches = trace.elem(q_size, t_size).matches;
 
     if (!score_only) result.aligned_query = result.build_string<M>(q_lo, q_hi);
 }

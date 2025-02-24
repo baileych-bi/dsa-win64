@@ -146,16 +146,16 @@ std::vector<Read>
 extract_read_data(const ConstMapping &mapping);
 
 /**
-  * Remove poor quality sequeces from data.
+  * Remove poor quality sequeces from data. This version takes paired end reads, not yet assembled.
   *
   * Bases at 3' read ends are removed if they fall below params.tq_qual_min.
-  * The reference sequence itself will be trimmed from the read and the UMI barcode extracted. 
+  * The reference sequence itself will be trimmed from the read and the UMI barcode extracted.
   * Reads fail QC if the fw or rv reference sequence/UMI cannot be identified.
   *
   * @param fw the unpaired forward reads
   * @param rv the unpaired reverse reads
-  * @param fwex a UMIExtractor initialized with the forawrd reference sequence
-  * @param rvex a UMIExtractor initialized with the reverse reference sequence
+  * @param fwexs UMIExtractors initialized with the forawrd reference sequences
+  * @param rvexs UMIExtractors initialized with the reverse reference sequences
   * @param params run options from command line arguments
   * @param log ParseLog to store counts of reads that fail QC for one reason or another
   *
@@ -170,6 +170,85 @@ qc_reads(
     const help::Params &params,
     ParseLog &log);
 
+/**
+  * Remove poor quality sequeces from data. This version takes single ragged-ended reads.
+  *
+  * Bases at 3' read ends are removed if they fall below params.tq_qual_min.
+  * The reference sequence itself will be trimmed from the read and the UMI barcode extracted.
+  * Reads fail QC if the fw or rv reference sequence/UMI cannot be identified.
+  *
+  * @param reads the unpaired forward reads
+  * @param exs UMIExtractors initialized with the reference sequences
+  * @param params run options from command line arguments
+  * @param log ParseLog to store counts of reads that fail QC for one reason or another
+  *
+  * @return pairs of reads (not yet assembled) for which both fw and rv passed QC
+  */
+std::vector<Read>
+qc_reads(
+    std::vector<Read> &&reads,
+    const std::vector<UMIExtractor> &exs,
+    const help::Params &params,
+    ParseLog &log);
+
+/**
+* Remove poor quality sequeces from data. This version takes full reads expected to contain
+* both the forward and reverse references.
+*
+* Bases at 3' read ends are removed if they fall below params.tq_qual_min.
+* The reference sequence itself will be trimmed from the read and the UMI barcode extracted.
+* Reads fail QC if the fw or rv reference sequence/UMI cannot be identified.
+*
+* @param reads the reads
+* @param fwexs UMIExtractors initialized with the forawrd reference sequences
+* @param rvexs UMIExtractors initialized with the reverse reference sequences
+* @param params run options from command line arguments
+* @param log ParseLog to store counts of reads that fail QC for one reason or another
+*
+* @return pairs of reads (not yet assembled) for which both fw and rv passed QC
+*/
+std::vector<Read>
+qc_reads(
+    std::vector<Read> &&reads,
+    const std::vector<UMIExtractor> &fwexs,
+    const std::vector<UMIExtractor> &rvexs,
+    const help::Params &params,
+    ParseLog &log);
+
+/*
+std::vector<Read>
+qc_rv_only(
+    std::vector<Read> && reads,
+    const std::vector<UMIExtractor> & rvexs,
+    const Params & params,
+    ParseLog & log);
+*/
+/**
+  * Remove poor quality sequeces from data. This version takes separate fw and rv reads to be assembled after qc.
+  *
+  * Bases at 3' read ends are removed if they fall below params.tq_qual_min.
+  * The reference sequence itself will be trimmed from the read and the UMI barcode extracted. 
+  * Reads fail QC if the fw or rv reference sequence/UMI cannot be identified.
+  *
+  * @param fw the unpaired forward reads
+  * @param rv the unpaired reverse reads
+  * @param fwex a UMIExtractor initialized with the forawrd reference sequence
+  * @param rvex a UMIExtractor initialized with the reverse reference sequence
+  * @param params run options from command line arguments
+  * @param log ParseLog to store counts of reads that fail QC for one reason or another
+  *
+  * @return pairs of reads (not yet assembled) for which both fw and rv passed QC
+  */
+/*
+std::vector<ReadPair>
+qc_reads(
+    std::vector<Read> &&fw,
+    std::vector<Read> &&rv,
+    const std::vector<UMIExtractor> &fwexs,
+    const std::vector<UMIExtractor> &rvexs,
+    const help::Params &params,
+    ParseLog &log);
+*/
 /**
   * Assemble paired-end reads.
   *

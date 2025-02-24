@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <type_traits>
 
 #ifdef DSA_TARGET_WIN64

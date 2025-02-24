@@ -20,8 +20,10 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
+#include <vector>
 
 #include "umi.h"
+
 
 namespace bio {
 
@@ -77,6 +79,23 @@ UMIExtractor::operator()(const Nt *from_nt, const Nt *to_nt) const {
 ExtractedUMI
 UMIExtractor::operator()(Nts::const_iterator from, Nts::const_iterator to) const {
     return (*this)(from.operator->(), to.operator->());
+}
+
+void UMIExtractor::complement() {
+    thread_local std::vector<char> quick_c_lut;
+    if (quick_c_lut.empty()) {
+        quick_c_lut.resize(256, 0);
+        quick_c_lut['A'] = 'T';
+        quick_c_lut['C'] = 'G';
+        quick_c_lut['G'] = 'C';
+        quick_c_lut['T'] = 'A';
+        quick_c_lut['n'] = 'n';
+        quick_c_lut['N'] = 'N';
+    }
+    std::string c_sequence(sequence_);
+    for (char &nt : c_sequence) nt = quick_c_lut[size_t(nt)];
+    UMIExtractor tmp(c_sequence);
+    std::swap(tmp, *this);
 }
 
 }; //namespace bio

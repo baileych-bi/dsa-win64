@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <iostream>
 #include <istream>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <string_view>
 

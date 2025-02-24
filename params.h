@@ -77,10 +77,11 @@ struct Params {
     std::vector<TemplateSource> template_sources;
     std::vector<std::pair<size_t, size_t>> trims;
 
-    int no_header_flag     = 0;
-    int skip_assembly_flag = 0;
-    int allow_ptcs_flag    = 0;
-    int separate_cdr3_flag = 0;
+    int no_header_flag          = 0;
+    int skip_assembly_flag      = 0;
+    int reverse_complement_flag = 0;
+    int allow_ptcs_flag         = 0;
+    int separate_cdr3_flag      = 0;
 
     float min_alignment_score = 0.8f;
     char  tp_qual_min         = 'A';
@@ -90,6 +91,8 @@ struct Params {
     long  number_from         = 1;
 
     CodonOutput codon_output = CodonOutput::None;
+
+    int nfastq_files = 0;
 };
 
 }; //namespace help

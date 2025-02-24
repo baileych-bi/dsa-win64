@@ -44,32 +44,53 @@ print_option(std::ostream &os, const char *option, const char *helptext) {
 void
 print_help() {
     const struct OptHelp options[] = {
-        { 0,  "help",           "print this message and exit, see also (--help codons) and (--help templates)"},
-        { 0,  "version",        "print the program version number"},
-        {'s', "no_header",      "suppress printing of headers in program output"},
-        {'f', "fw_ref",         "nucleotide sequence(s) used to determine UMI and reading frame for forward read"},
-        {'r', "rv_ref",         "nucleotide sequence(s) used to determine UMI and reading frame for reverse read"},
-        {'t', "template",       "amino acid sequence to which translated paired-end reads will be aligned (or 'none' for no alignment)"},
-        {'d', "template_dna",   "dna sequence which will be traslated for alignmet with translated paired-end reads"},
-        {'q', "min_qual",       "bases with quality scores of < min_qual will be removed from 3' ends of reads (default=A)"},
-        {'x', "skip_assembly",  "skip paired read assemly and align forward and reverse reads to template independently (off by default)"},
-        {'v', "min_overlap",    "minimum 3' overlap required for assembly of paired ends (default=9)"},
-        {'m', "max_mismatch",   "maximum allowable nucleotide mismatches in paired 3' ends (default=0)"},
-        {'g', "min_umi_grp",    "during umi collapse, sequences with < min_umi_grp members will be discarded (default=1)"},
-        {'a', "min_aln",        "reads where (alignment score / max possible alignment score) < min_aln will be discarded (default=0.8)"},
-        {'n', "number_from",    "number template amino acids starting from 'n' in the #Substitutions# section (default=1)"},
-        {'c', "show_codons",    "output format for codons; can be ascii, horizontal, vertical, or none (none by default)"},
-        { 0 , "split",          "regular expression to split translated ORFs into multiple pieces for alignment to separate templates (see --help templates)"},
-        { 0 , "template_db",    ".fasta file containing a list of possible nucleotide templates for split sequences (see --help templates)"},
-        { 0 , "trim"            "trim the N- and/or C-terminal ends of a template or template database to match the deep-sequenced region (default=0,0)"}
+        { 0,  "help",               "print this message and exit, see also (--help codons) and (--help templates)"},
+        { 0,  "version",            "print the program version number"},
+        {'s', "no_header",          "suppress printing of headers in program output"},
+        {'f', "fw_ref",             "nucleotide sequence(s) used to determine UMI and reading frame for forward read"},
+        {'r', "rv_ref",             "nucleotide sequence(s) used to determine UMI and reading frame for reverse read"},
+        {'t', "template",           "amino acid sequence to which translated paired-end reads will be aligned (or 'none' for no alignment)"},
+        {'d', "template_dna",       "dna sequence which will be traslated for alignmet with translated paired-end reads"},
+        {'q', "min_qual",           "bases with quality scores of < min_qual will be removed from 3' ends of reads (default=A)"},
+        {'p', "process",            "how reads are processed, one of: 'pair' (two fastq files, assemble before alignment), 'nopair' (two fastq files, align reads without assembly), 'full' (one fastq file, no assembly needed)"},
+        {'v', "min_overlap",        "minimum 3' overlap required for assembly of paired ends (default=9)"},
+        {'m', "max_mismatch",       "maximum allowable nucleotide mismatches in paired 3' ends (default=0)"},
+        {'g', "min_umi_grp",        "during umi collapse, sequences with < min_umi_grp members will be discarded (default=1)"},
+        {'a', "min_aln",            "alignments where (#matching aas/#aas in template) < min_aln will be discarded (default=0.8)"},
+        {'n', "number_from",        "number template amino acids starting from 'n' in the #Substitutions# section (default=1)"},
+        {'c', "show_codons",        "output format for codons; can be ascii, horizontal, vertical, or none (none by default)"},
+        {'x', "skip_assembly",      "for paired reads only, do not try to assemble but instead align to template separately"},
+        {'k', "reverse_complement", "reverse complement the reads before alignment to template"},
+        { 0 , "split",              "regular expression to split translated ORFs into multiple pieces for alignment to separate templates (see --help templates)"},
+        { 0 , "template_db",        ".fasta file containing a list of possible nucleotide templates for split sequences (see --help templates)"},
+        { 0 , "trim"                "trim the N- and/or C-terminal ends of a template or template database to match the deep-sequenced region (default=0,0)"}
     }; 
-
+//  std::cout << "********************************************************************************\n" << std::endl <- 80 *s
     std::cout << "Deep Sequencing Analysis version " << VERSION_STRING << "\n\n"
-                 "Program usage: dsa [options] [-f forward_reference] [-r reverse_reference]\n"
-                 "  [-t template] forward_reads.fastq reverse_reads.fastq > output.csv\n" << std::endl;
-    std::cout << "Aligns paired reads in fastq files forward_reads.fastq and reverse_reads.fastq,\n"
-                 "  extracts UMI barcodes, translates, and aligns the translated sequence to the\n"
-                 "  supplied amino acid or dna template seuqnece(s)." << std::endl;
+                 "Program usage: dsa [options] -f forward_reference [-r reverse_reference]\n"
+                 "  [-t template] forward_reads.fastq [reverse_reads.fastq] > output.csv\n" << std::endl;
+    std::cout << "Performs quality control filtering, UMI grouping, translation, and alignment to\n"
+              << "templates(s)." << std::endl;
+    std::cout << "dsa handles several different input types as outlined below:\n"
+              << "1. Paired end reads (e.g., Illumina data).\n" 
+              << "  Requires two .fastq files containing the forward and reverse reads as well as\n"
+              << "  both forward and reverse references (-f --fw_ref, -r --rv_ref). Example:\n"
+              << "  >dsa -f GGTGCCAACAT -r TTATTCCCAGA -t MRNGPQSVTTAN dataR2.fastq dataR1.fastq\n"
+              << "2. Ragged end reads (e.g. salvaging an Illumina experiment where one file is\n"
+              << "  basically unusuable).\n"
+              << "  Requires only one .fastq file and a corresponding forward reference\n"
+              << "  (-f --fw_ref). Example:\n"
+              << "  >dsa -f GGTGCCAACAT -t MRNGPQSVTTAN dataR2.fastq\n"
+              << "  Note that you can also analyze reverse read file, using\n"
+              << "  (-k --reverse_complement) to flip the sequence before aligning it to\n"
+              << "  the template if necessary:\n"
+              << "  >dsa -f GGTGCCAACAT -t MRNGPQSVTTAN -k dataR1.fastq\n"
+              << "3. Full length reads where no assembly is needed (e.g. Nanopore data):\n"
+              << "  Requires just one .fastq file but both forward and reverse references. Example:\n"
+              << "  >dsa -f GGTGCCAACAT -r TCTGGGAATAA -t MRNGPQSVTTAN nanpore_data.fastq\n"
+              << "  Note, that we've flipped the reverse reference sequence relative to examples\n"
+              << "  1 and 2. References are always 5' to 3' relative to the corresponding .fastq\n"
+              << "  files." << std::endl;
     std::cout << "Reference sequences (-f, -r) are use to identify UMI barcodes and the open reading frame.\n"
                  "  References are composed of capital ATGCN and lowercase n characters. Capital ATGCN are\n"
                  "  used to match bases in the reads (N is a wild-card) and lowercase n characters define\n"
@@ -278,8 +299,9 @@ parse_argv(int argc, char **argv) {
 
     static struct option long_options[] = {
         //flags
-        {"no_header",      no_argument, &p.no_header_flag,      1},
-        {"skip_assembly",  no_argument, &p.skip_assembly_flag,  1},
+        {"no_header",          no_argument, &p.no_header_flag,          1},
+        {"skip_assembly",      no_argument, &p.skip_assembly_flag,      1},
+        {"reverse_complement", no_argument, &p.reverse_complement_flag, 1},
         //options  
         {"min_aln",        required_argument, 0, 'a'}, //minimum alignment score (fraction of max)
         {"fw_ref",         required_argument, 0, 'f'}, //forward UMI/reference DNA sequence
@@ -296,13 +318,13 @@ parse_argv(int argc, char **argv) {
         {"template_db",    required_argument, 0,  0 }, //file containing multiple templates
         {"trim",           required_argument, 0,  0 },
         //commands  
-        {"version",        no_argument,     0,  0 }, //print version number
+        {"version",        no_argument,       0,  0 }, //print version number
         {"help",           optional_argument, 0,  0 },
         //end-of-list sentinel
-        {nullptr,        0,                        0,  0 }  //end-of-list sentinel
+        {nullptr,        0,                   0,  0 }  //end-of-list sentinel
     };
 
-    const char *opt_chars = "f:g:r:t:d:a:b:u:q:v:m:n:c:svx";
+    const char *opt_chars = "f:g:r:t:d:a:b:u:q:v:m:n:c:svxk";
 
     std::regex trim_regex(R"-(([0-9]+),([0-9]+))-");
     std::smatch match;
@@ -405,6 +427,7 @@ parse_argv(int argc, char **argv) {
                     std::cerr << "number_from must be an integer >= 0" << std::endl;
                     exit (EXIT_FAILURE);
                 }
+                break;
             case 'q':
                 p.tp_qual_min = optarg[0];
                 if (optarg[1] != 0 || p.tp_qual_min < '!' || p.tp_qual_min > '~') {
@@ -436,46 +459,48 @@ parse_argv(int argc, char **argv) {
             case 'x':
                 p.skip_assembly_flag = 1;
                 break;
+            case 'k':
+                p.reverse_complement_flag = 1;
+                break;
             case '?':
                 break;
             default:
-                exit (EXIT_FAILURE);
+                exit(EXIT_FAILURE);
         }
     }
 
-    if (optind ==  argc) {
-        std::cerr << "missing positional argument: forward_reads.fastq" << std::endl;
+    //we require exactly one or two filenames as positional arguments
+    if (optind == argc) {
+        std::cerr << "missing fw_reads.fastq" << std::endl;
         exit (EXIT_FAILURE);
     }
     p.fw_filename = argv[optind++];
-
-    if (optind == argc) {
-        std::cerr << "missing positional argument: reverse_reads.fastq" << std::endl;
-        exit (EXIT_FAILURE);
-    } 
-    p.rv_filename = argv[optind++];
-
+    
+    //check for the optional second file
     if (optind != argc) {
-        std::cerr << "unexpected positional argument: '" << argv[optind] << "'" << std::endl;
-        exit (EXIT_FAILURE);
+        p.rv_filename = argv [optind++];
+
+        //but if there are any more arguments then we bail
+        if (optind != argc) {
+            std::cerr << "unexpected argument: '" << argv [optind] << "'" << std::endl;
+            exit(EXIT_FAILURE);
+        }
     }
 
-    if (p.fw_refs.empty()) {
-        std::cerr << "at least one reference sequence is required for the forward read (-f, --fw_ref)" << std::endl;
-        exit (EXIT_FAILURE);
+    if (p.fw_filename.empty() && p.rv_filename.empty()) {
+        std::cerr << "missing .fastq input files" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
-    if (p.rv_refs.empty()) {
-        std::cerr << "at least one reference sequence is required for the reverse read (-r, --rv_ref)" << std::endl;
-        exit (EXIT_FAILURE);
+    if (p.fw_refs.empty() && p.rv_refs.empty()) {
+        std::cerr << "missing reference sequences (-f --fw_ref and/or -r --rv_ref)" << std::endl;
+        exit(EXIT_FAILURE);
     }
 
-    /*
-    if (p.template_sources.empty()) {
-        std::cerr << "missing template sources (-t, --template) (-d, --template_dna) (--template_db)" << std::endl;
-        exit (EXIT_FAILURE);
+    if (p.skip_assembly_flag && (p.fw_filename.empty() || p.rv_filename.empty() || p.fw_refs.empty() || p.rv_refs.empty())) {
+        std::cerr << "skip assembly flag (-x --skip_assembly) requires two .fastq input files and both forward (-f --fw_ref) and reverse (-r --rv_ref) reference sequences" << std::endl;
+        exit(EXIT_FAILURE);
     }
-    */
 
     if (p.trims.empty()) {
         for (const auto &src : p.template_sources) p.trims.push_back({0,0});

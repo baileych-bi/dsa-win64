@@ -147,105 +147,111 @@ extract_read_data(const ConstMapping &mapping) {
     return result;
 }
 
+/* Perform QC on paired reads, i.e. Scenario 1 as described oultined in main.cc.
+ * For thie we need two vectors of reads representing the forward and antiparallel
+ * seqences given by fw and rv as well as references for the read pairs as given by
+ * fwexs and rvexs. Unlike other variants of qc_reads, this one returns a vector of
+ * ReadPair objects intended for assembly. In order for a ReadPair to pass QC, both
+ * the forward and reverse reads have to pass QC individually.
+ */
 std::vector<ReadPair>
 qc_reads(
     std::vector<Read> &&fw,
     std::vector<Read> &&rv,
     const std::vector<UMIExtractor> &fwexs,
     const std::vector<UMIExtractor> &rvexs,
-    const Params &params,
-    ParseLog &log)
-{
+    const Params & params,
+    ParseLog & log) {
     assert(fw.size() == rv.size());
     std::vector<ReadPair> result;
 
     const unsigned int thread_count = std::thread::hardware_concurrency();
     const size_t chunk = fw.size() / thread_count;
 
-    std::vector<std::thread> threads(thread_count-1);
+    std::vector<std::thread> threads(thread_count - 1);
     vecvec<ReadPair>         partial_results(thread_count);
     std::vector<ParseLog>    partial_logs(thread_count);
 
     typedef std::vector<Read>::iterator IterT;
 
-    auto perform_qc = [&](IterT ff, 
-                        IterT rr,
-                        size_t n,
-                        std::vector<ReadPair> &output,
-                        ParseLog &log)->void {
-        output.clear();
-        for (const IterT last = ff + n; ff != last; ++ff, ++rr) {
-            if (ff->empty()) {
-                ++log.filter_invalid_chars;
-                continue;
+    auto perform_qc = [&](IterT ff,
+        IterT rr,
+        size_t n,
+        std::vector<ReadPair> & output,
+        ParseLog & log)->void{
+            output.clear();
+            for (const IterT last = ff + n; ff != last; ++ff, ++rr) {
+                if (ff->empty()) {
+                    ++log.filter_invalid_chars;
+                    continue;
+                }
+
+                if (rr->empty()) {
+                    ++log.filter_invalid_chars;
+                    continue;
+                }
+
+                while (!ff->empty() && ff->qual.back() < params.tp_qual_min) ff->pop_back();
+                while (!rr->empty() && rr->qual.back() < params.tp_qual_min) rr->pop_back();
+
+                ExtractedUMI fwumi;
+                for (const UMIExtractor & fwex : fwexs) {
+                    fwumi = fwex(ff->dna.begin(), ff->dna.end());
+                    if (fwumi.valid()) break;
+                }
+                if (fwumi.invalid()) {
+                    ++log.filter_no_fw_umi;
+                    continue;
+                }
+
+                ExtractedUMI rvumi;
+                for (const UMIExtractor &rvex : rvexs ) {
+                    rvumi = rvex(rr->dna.begin(), rr->dna.end());
+                    if (rvumi.valid()) break;
+                }
+                if (rvumi.invalid()) {
+                    ++log.filter_no_rv_umi;
+                    continue;
+                }
+
+                ff->dna.exo(fwumi.from + fwumi.length, 0);
+                ff->qual = ff->qual.substr(fwumi.from + fwumi.length);
+
+                rr->dna.exo(rvumi.from + rvumi.length, 0);
+                rr->qual = rr->qual.substr(rvumi.from + rvumi.length);
+
+                ff->barcode.reserve(fwumi.barcode.size() + rvumi.barcode.size());
+                ff->barcode += fwumi.barcode;
+                ff->barcode += rvumi.barcode;
+
+                ReadPair rd;
+                rd.fw = std::move(*ff);
+                rd.rv = std::move(*rr);
+
+                output.push_back(std::move(rd));
             }
-
-            if (rr->empty()) {
-                ++log.filter_invalid_chars;
-                continue;
-            }
-
-            while (!ff->empty() && ff->qual.back() < params.tp_qual_min) ff->pop_back();
-            while (!rr->empty() && rr->qual.back() < params.tp_qual_min) rr->pop_back();
-
-            ExtractedUMI fwumi;
-            for (const UMIExtractor &fwex : fwexs) {
-                fwumi = fwex(ff->dna.begin(), ff->dna.end());
-                if (fwumi.valid()) break;
-            }
-            if (fwumi.invalid()) {
-                ++log.filter_no_fw_umi;
-                continue;
-            }
-
-            ExtractedUMI rvumi;
-            for (const UMIExtractor &rvex : rvexs) {
-                rvumi = rvex(rr->dna.begin(), rr->dna.end());
-                if (rvumi.valid()) break;
-            }
-            if (rvumi.invalid()) {
-                ++log.filter_no_rv_umi;
-                continue;
-            }
-
-            ff->dna.exo(fwumi.from + fwumi.length, 0);
-            ff->qual = ff->qual.substr(fwumi.from + fwumi.length);
-
-            rr->dna.exo(rvumi.from + rvumi.length, 0);
-            rr->qual = rr->qual.substr(rvumi.from + rvumi.length);
-
-            ff->barcode.reserve(fwumi.barcode.size() + rvumi.barcode.size());
-            ff->barcode += fwumi.barcode;
-            ff->barcode += rvumi.barcode;
-
-            ReadPair rd;
-            rd.fw = std::move(*ff);
-            rd.rv = std::move(*rr);
-
-            output.push_back(std::move(rd));
-        }
     };
 
-    size_t i=0;
-    auto ff=fw.begin(), rr=rv.begin();
-    for (; i<thread_count-1; ++i, ff += chunk, rr += chunk) {
-        threads[i] = std::thread(
-            perform_qc, ff, rr, chunk, std::ref(partial_results[i]), std::ref(partial_logs[i])
+    size_t i = 0;
+    auto ff = fw.begin(), rr = rv.begin();
+    for (; i < thread_count - 1; ++i, ff += chunk, rr += chunk) {
+        threads [i] = std::thread(
+            perform_qc, ff, rr, chunk, std::ref(partial_results [i]), std::ref(partial_logs [i])
         );
     }
-    perform_qc(ff, rr, fw.end()-ff, partial_results[i], partial_logs[i]);
+    perform_qc(ff, rr, fw.end() - ff, partial_results [i], partial_logs [i]);
 
-    for (auto &th : threads) th.join();
+    for (auto & th : threads) th.join();
 
     size_t result_size = 0;
-    for (const auto &pr : partial_results) result_size += pr.size();
+    for (const auto & pr : partial_results) result_size += pr.size();
     result.reserve(result_size);
 
-    for (auto &pr : partial_results) {
+    for (auto & pr : partial_results) {
         result.insert(
             result.cend(),
             std::make_move_iterator(pr.begin()),
-            std::make_move_iterator(pr.end()  )
+            std::make_move_iterator(pr.end())
         );
     }
 
@@ -253,6 +259,252 @@ qc_reads(
 
     fw.clear(); fw.shrink_to_fit();
     rv.clear(); rv.shrink_to_fit();
+
+    return result;
+}
+
+std::vector<Read>
+qc_reads(
+    std::vector<Read> &&reads,
+    const std::vector<UMIExtractor> &exs,
+    const help::Params &params,
+    ParseLog &log) {
+    std::vector<Read> result;
+
+    std::cout << "qc_reads called" << std::endl;
+    const unsigned int thread_count = std::thread::hardware_concurrency();
+    const size_t chunk = reads.size() / thread_count;
+
+    std::vector<std::thread> threads(thread_count - 1);
+    vecvec<Read>             partial_results(thread_count);
+    std::vector<ParseLog>    partial_logs(thread_count);
+
+    typedef std::vector<Read>::iterator IterT;
+
+    auto perform_qc = [&](IterT ii, size_t n, std::vector<Read> &output, ParseLog & log)->void {
+        output.clear();
+        for (const IterT last = ii + n; ii != last; ++ii) {
+            if (ii->empty()) {
+                ++log.filter_invalid_chars;
+                continue;
+            }
+
+            while (!ii->empty() && ii->qual.back() < params.tp_qual_min) ii->pop_back();
+
+            ExtractedUMI umi;
+            for (const UMIExtractor &ex : exs) {
+                umi = ex(ii->dna.begin(), ii->dna.end());
+                if (umi.valid()) break;
+            }
+
+            if (umi.invalid()) {
+                ++log.filter_no_fw_umi;
+                continue;
+            }
+
+            ii->dna.exo(umi.from + umi.length, 0);
+            ii->qual = ii->qual.substr(umi.from + umi.length);
+
+            ii->barcode = umi.barcode;
+
+            output.push_back(std::move(*ii));
+        }
+    };
+
+    size_t i = 0;
+    auto ii = reads.begin();
+    for (; i < thread_count - 1; ++i, ii += chunk) {
+        threads[i] = std::thread(
+            perform_qc, ii, chunk, std::ref(partial_results[i]), std::ref(partial_logs[i])
+        );
+    }
+    perform_qc(ii, reads.end() - ii, partial_results[i], partial_logs[i]);
+
+    for (auto &th : threads) th.join();
+
+    size_t result_size = 0;
+    for (const auto &pr : partial_results) result_size += pr.size();
+    result.reserve(result_size);
+
+    for (auto & pr : partial_results) {
+        result.insert(
+            result.cend(),
+            std::make_move_iterator(pr.begin()),
+            std::make_move_iterator(pr.end())
+        );
+    }
+
+    log = std::accumulate(partial_logs.begin(), partial_logs.end(), log);
+
+    reads.clear(); reads.shrink_to_fit();
+
+    return result;
+}
+
+//Run QC on already pre-paired or unidirectional (e.g. Nanopore) reads
+//Corresponds to Scenarios 4 and 5 in main.cc
+std::vector<Read>
+qc_reads(
+    std::vector<Read> &&reads,
+    const std::vector<UMIExtractor> &fwexs,
+    const std::vector<UMIExtractor> &rvexs,
+    const Params &params,
+    ParseLog &log) {
+    std::vector<Read> result;
+
+    const unsigned int thread_count = std::thread::hardware_concurrency();
+    const size_t chunk = reads.size() / thread_count;
+
+    std::vector<std::thread> threads(thread_count - 1);
+    vecvec<Read>             partial_results(thread_count);
+    std::vector<ParseLog>    partial_logs(thread_count);
+
+    typedef std::vector<Read>::iterator IterT;
+
+    auto perform_qc = [&](IterT ii, size_t n, std::vector<Read> & output, ParseLog & log)->void {
+        output.clear();
+        for (const IterT last = ii + n; ii != last; ++ii) {
+            if (ii->empty()) {
+                ++log.filter_invalid_chars;
+                continue;
+            }
+
+            while (!ii->empty() && ii->qual.back() < params.tp_qual_min) ii->pop_back();
+
+            ExtractedUMI fwumi;
+            for (const UMIExtractor & ex : fwexs) {
+                fwumi = ex(ii->dna.begin(), ii->dna.end());
+                if (fwumi.valid()) break;
+            }
+
+            if (fwumi.invalid()) {
+                ++log.filter_no_fw_umi;
+                continue;
+            }
+
+            ExtractedUMI rvumi;
+            for (const UMIExtractor & rvex : rvexs) {
+                rvumi = rvex(ii->dna.begin(), ii->dna.end());
+                if (rvumi.valid()) break;
+            }
+            if (rvumi.invalid() || rvumi.from < fwumi.from + fwumi.length) {
+                ++log.filter_no_rv_umi;
+                continue;
+            }
+
+            ii->dna.exo(fwumi.from + fwumi.length, ii->dna.size() - rvumi.from);
+            ii->qual = ii->qual.substr(fwumi.from + fwumi.length, rvumi.from - (fwumi.from + fwumi.length));
+
+            ii->barcode.reserve(fwumi.barcode.size() + rvumi.barcode.size());
+            ii->barcode += fwumi.barcode;
+            ii->barcode += rvumi.barcode;
+
+            output.push_back(std::move(*ii));
+        }
+    };
+
+    size_t i = 0;
+    auto ii = reads.begin();
+    for ( ; i < thread_count - 1; ++i, ii += chunk, ii += chunk ) {
+        threads [i] = std::thread(
+            perform_qc, ii, chunk, std::ref(partial_results [i]), std::ref(partial_logs [i])
+        );
+    }
+    perform_qc(ii, reads.end() - ii, partial_results [i], partial_logs [i]);
+
+    for (auto & th : threads) th.join();
+
+    size_t result_size = 0;
+    for (const auto & pr : partial_results) result_size += pr.size();
+    result.reserve(result_size);
+
+    for (auto & pr : partial_results) {
+        result.insert(
+            result.cend(),
+            std::make_move_iterator(pr.begin()),
+            std::make_move_iterator(pr.end())
+        );
+    }
+
+    log = std::accumulate(partial_logs.begin(), partial_logs.end(), log);
+
+    reads.clear(); reads.shrink_to_fit();
+
+    return result;
+}
+
+//Run QC on an unpaired reverse read
+std::vector<Read>
+qc_rv_only(
+    std::vector<Read> && reads,
+    const std::vector<UMIExtractor> & rvexs,
+    const Params & params,
+    ParseLog & log) {
+    std::vector<Read> result;
+
+    const unsigned int thread_count = std::thread::hardware_concurrency();
+    const size_t chunk = reads.size() / thread_count;
+
+    std::vector<std::thread> threads(thread_count - 1);
+    vecvec<Read>             partial_results(thread_count);
+    std::vector<ParseLog>    partial_logs(thread_count);
+
+    typedef std::vector<Read>::iterator IterT;
+
+    auto perform_qc = [&] (IterT ii, size_t n, std::vector<Read> & output, ParseLog & log)->void {
+        output.clear();
+        for ( const IterT last = ii + n; ii != last; ++ii ) {
+            if ( ii->empty() ) {
+                ++log.filter_invalid_chars;
+                continue;
+            }
+
+            while (!ii->empty() && ii->qual.back() < params.tp_qual_min) ii->pop_back();
+
+            ExtractedUMI rvumi;
+            for ( const UMIExtractor & rvex : rvexs ) {
+                rvumi = rvex(ii->dna.begin(), ii->dna.end());
+                if ( rvumi.valid() ) break;
+            }
+            if (rvumi.invalid()) {
+                ++log.filter_no_rv_umi;
+                continue;
+            }
+
+            ii->dna.exo(rvumi.from + rvumi.length, 0);
+            ii->qual = ii->qual.substr(rvumi.from + rvumi.length);
+
+            ii->barcode = std::move(rvumi.barcode);
+            output.push_back(std::move(*ii));
+        }
+    };
+
+    size_t i = 0;
+    auto ii = reads.begin();
+    for ( ; i < thread_count - 1; ++i, ii += chunk, ii += chunk ) {
+        threads [i] = std::thread(
+            perform_qc, ii, chunk, std::ref(partial_results [i]), std::ref(partial_logs[i])
+        );
+    }
+    perform_qc(ii, reads.end() - ii, partial_results [i], partial_logs [i]);
+
+    for (auto & th : threads) th.join();
+
+    size_t result_size = 0;
+    for (const auto & pr : partial_results) result_size += pr.size();
+    result.reserve(result_size);
+
+    for (auto & pr : partial_results) {
+        result.insert(
+            result.cend(),
+            std::make_move_iterator(pr.begin()),
+            std::make_move_iterator(pr.end())
+        );
+    }
+
+    log = std::accumulate(partial_logs.begin(), partial_logs.end(), log);
+
+    reads.clear(); reads.shrink_to_fit();
 
     return result;
 }
@@ -595,7 +847,9 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
             const Aas  &template_aas  = dbs[i]->get_aas(template_id);
             const Cdns &template_cdns = dbs[i]->get_codons(template_id);
 
-            float max_score = 0.0f;
+            /*
+            int64_t min_score = 0, max_score = 1;
+            min_score = -dbs[i]->gap_penalty() * std::min(orfs[i].aas.size(), template_aas.size());
             if (ragged_ends) {
                 max_score = dbs[i]->codon_data_available()
                     ? nw_self_align_score<Cdn>(orfs[i].cdns, CDNSUBS)
@@ -603,14 +857,23 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
                 max_score -= dbs[i]->gap_penalty() * std::abs(int64_t(orfs[i].aas.size()) - int64_t(template_aas.size()));
             } else {
                 max_score = dbs [i]->codon_data_available()
-                    ? nw_self_align_score<Cdn>(template_cdns, CDNSUBS)
-                    : nw_self_align_score<Aa>(template_aas, BLOSUM62);
+                    ? nw_self_align_score<Cdn>(orfs[i].cdns, CDNSUBS)
+                    : nw_self_align_score<Aa>(orfs[i].aas, BLOSUM62);
             }
-
-            if (aln.score / max_score < params.min_alignment_score) {
+            */
+            double match_pct = aln.matches / double(template_aas.size());
+            //std::cerr << aln.matches << "\t" << template_aas.size() << "\t" << aln.matches / double(template_aas.size()) << "\t" << params.min_alignment_score << std::endl;
+            if (match_pct < params.min_alignment_score) {
                 ++log.filter_bad_alignment;
                 break;
             }
+            /*
+            std::cerr << ((aln.score - min_score) / double(max_score - min_score)) << "\t" << min_score << "\t" << max_score << "\t" << params.min_alignment_score << std::endl;
+            if (min_score == max_score || (aln.score - min_score) / double(max_score - min_score) < params.min_alignment_score) {
+                ++log.filter_bad_alignment;
+                break;
+            }
+            */
 
             template_ids.push_back(template_id);
             alignment.alignment += aln.build_string(orfs[i].aas);
