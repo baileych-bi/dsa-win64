@@ -57,9 +57,10 @@ using help::Params;
 int
 main(int argc, char *argv[]) {
     /*
-    Aas qry = "PRDCGCKPCICSVPEVSSVFIFPPKPKDVLTITLTPKVTCVVLDFSKDDPEVHFSWFVDDVEVHTAQTKPREEQINSTFRSVSELPI";
+    //Aas qry = "YLAKWY";
+    Aas qry = "PRDCGCKPCICSVPEVSSVFIFPPKPKDVLNNNNNNTITLTPKVTCVVLDFSKDDPEVHFSWFVDDVEVHTAQTKPREEQINSTFRSVSELPI";
     Aas tpl = "PRDCGCKPCICTVPEVSSVFIFPPKPKDVLTITLTPKVTCVVVDISKDDPEVQFSWFVDDVEVHTAQTKPREEQINSTFRSVSELPIMHQDWLNGKEFKCRVNSAAFPAPIEKTISKTKGRPKAPQVYTIPPPKEQMAKDKVSLTCMITNFFPEDITVEWQWNGQ";
-
+    //Aas tpl = "EVQLVESGGGLVQAGGFLRLSCELRGSIFNQYAMAWFRQAPGKEREFVAGMGAVPHYGEFVKGRFTISRDNAKSTVYLQMSSLKPEDTAIYFCARSKSTYISYNSNGYDYWGRG";
     Alignment aln;
     nw_align<Aa>(qry, tpl, BLOSUM62, 4, aln, false);
 
@@ -70,11 +71,12 @@ main(int argc, char *argv[]) {
     std::cout << "self-score tpl: " << tpl_self_score << std::endl;
     std::cout << "adjusted self score: " << (tpl_self_score - 4 * std::abs(int32_t(tpl.size()) - int32_t(qry.size()))) << std::endl;
     std::cout << "score: " << aln.score << std::endl;
+    std::cout << "matches: " << aln.matches << std::endl;
     std::cout << "align: " << aln.aligned_query << std::endl;
 
     exit(EXIT_SUCCESS);
     */
-
+    
     if (argc < 2) {
         std::cerr << "Deep Sequencing Analysis version " << VERSION_STRING << ": "
                   << "run dsa --help for instructions." << std::endl;

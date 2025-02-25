@@ -232,6 +232,7 @@ const Matrix<int32_t> CDNSUBS(64, 64, cdnsubs_data);
 void
 Alignment::clear() {
     score = 0;
+    matches = 0;
     traceback.resize(0, 0);
     aligned_query.clear();
 }

@@ -271,7 +271,7 @@ qc_reads(
     ParseLog &log) {
     std::vector<Read> result;
 
-    std::cout << "qc_reads called" << std::endl;
+    //std::cout << "qc_reads called" << std::endl;
     const unsigned int thread_count = std::thread::hardware_concurrency();
     const size_t chunk = reads.size() / thread_count;
 

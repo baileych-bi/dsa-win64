@@ -128,7 +128,7 @@ struct Cell {
 /** The results of a Needleman-Wunsch alignment. */
 struct Alignment {
     int32_t score    = 0;      ///< The global alignment score.
-    uint32_t matches = 0;      ///< The number of matches contributing to the alignment score
+    int32_t matches = 0;      ///< The number of matches contributing to the alignment score
     Matrix<Cell> traceback;    ///< The traceback matrix.
     std::string aligned_query; ///< A gapped string showing elements in the query that align with those in the template.
 
@@ -251,43 +251,43 @@ nw_align(typename Polymer<M>::const_iterator q_lo,
     trace.resize(q_size+1, t_size+1);
 
     for (int i = 1; i < trace.rows(); ++i) {
-        trace.elem(i, 0).score = -gapp * i;
-        trace.elem(i, 0).move = Cell::Move::GAP_T; //Cell::Move::GAP_B;
+        trace.elem(i, 0).move = Cell::Move::GAP_T;
     }
     for (int j = 1; j < trace.cols(); ++j) {
-        trace.elem(0, j).score = -gapp * j;
-        trace.elem(0, j).move = Cell::Move::GAP_Q; //Cell::Move::GAP_A;
+        trace.elem(0, j).move = Cell::Move::GAP_Q;
     }
 
+    //we set the gap penalty to 0 for leading and trailing gaps
+    //this contextual gap penalty is stored in agapp and bgapp
+    int32_t qgapp = gapp, tgapp = gapp;
     for (size_t i = 0; i < q_size; ++i) {
+        qgapp = (i + 1 != q_size) * gapp; //set query gap penalty = 0 for last row
         size_t n = q_lo[i].index();
         for (size_t j = 0; j < t_size; ++j) {
+            tgapp = (j + 1 != t_size) * gapp; //set template gap pentalty = 0 for last col
             size_t m = t_lo[j].index();
 
-            //Cell cell;
-            //cell.move    = Cell::Move::MATCH;
-            //cell.score   = trace.elem(i, j).score + match.elem(m, n);
             Cell cell = trace.elem(i, j);
             cell.move = Cell::Move::MATCH;
             cell.score += match.elem(m, n);
             cell.matches += 1;
 
-            int32_t gappa_score = trace.elem(i + 1, j).score - gapp;
-            if (i && i != q_size - 1 && trace.elem(i + 1, j).move != Cell::Move::GAP_Q) gappa_score -= 1;
+            int32_t gapq_score = trace.elem(i + 1, j).score - qgapp;
+            //if (i && i != q_size - 1 && trace.elem(i + 1, j).move == Cell::Move::GAP_Q) gappa_score += gapx;
             
-            if (gappa_score > cell.score) {
-                cell.score = gappa_score;
+            if (gapq_score > cell.score) {
+                cell.score = gapq_score;
                 cell.move = Cell::Move::GAP_Q;
-                cell.matches -= 1;
+                cell.matches = trace.elem(i + 1, j).matches;
             }
 
-            int32_t gappb_score = trace.elem(i, j + 1).score - gapp;
-            if (j && j != t_size - 1 && trace.elem(i, j + 1).move != Cell::Move::GAP_T) gappb_score -= 1;
+            int32_t gapt_score = trace.elem(i, j + 1).score - tgapp;
+            //if (j && j != t_size - 1 && trace.elem(i, j + 1).move == Cell::Move::GAP_T) gappb_score += gapx;
 
-            if (gappb_score > cell.score) {
-                cell.score = gappb_score;
+            if (gapt_score > cell.score) {
+                cell.score = gapt_score;
                 cell.move  = Cell::Move::GAP_T;
-                cell.matches -= 1;
+                cell.matches = trace.elem(i, j + 1).matches;
             }
 
             trace.elem(i+1, j+1) = cell;
