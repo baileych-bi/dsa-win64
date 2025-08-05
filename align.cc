@@ -33,6 +33,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace bio {
 
 Overlap
+find_overlap(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {
+    thread_local std::vector<uint16_t> lower; lower.clear();
+    thread_local std::vector<uint16_t> upper; upper.clear();
+
+    lower.resize(a_size + 1, 0);
+    upper.resize(a_size + 1, 0);
+
+    for (size_t i=1; i != b_size; ++i) {
+        for (size_t j=1; j != a_size; ++j) {
+        }
+        std::swap(upper, lower);
+    }
+
+
+}
+
+Overlap
 find_overlapv_256(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {
     constexpr const unsigned REGW = sizeof(__m256i);
     std::vector<uint16_t> upper((a_size+1+REGW-1)/REGW*REGW+REGW, 0);
@@ -79,11 +96,11 @@ Read::assemble(Read &&fw, Read &&rv, size_t min_overlap_size, size_t max_mismatc
     Overlap ol = find_overlapv_256(fw.dna.c_data(), fw.dna.size(), 
                                    rv.dna.c_data(), rv.dna.size());
     if (ol.overlap < min_overlap_size || ol.mismatches > max_mismatches) {
-        std::clog << "Found non-overlapping paired reads:" << std::endl;
-        std::clog << "Fw:" << std::endl;
-        std::clog << fw.dna.c_str() << std::endl;
-        std::clog << "Rv:" << std::endl;
-        std::clog << rv.dna.c_str() << std::endl;
+        //std::clog << "Found non-overlapping paired reads:" << std::endl;
+        //std::clog << "Fw:" << std::endl;
+        //std::clog << fw.dna.c_str() << std::endl;
+        //std::clog << "Rv:" << std::endl;
+        //std::clog << rv.dna.c_str() << std::endl;
         return rd;
     }
 
@@ -331,4 +348,3 @@ operator<<(std::ostream &os, const Read &rd) {
 }
 
 }; //namespace bio
-

@@ -681,7 +681,15 @@ umi_collapse(
 
     //gather up reads by umi into a hash table
     std::unordered_map<std::string, std::vector<Read>> groups;
-    for (Read &rd : reads) groups[rd.barcode].push_back(std::move(rd));
+    std::vector<Read> ungrouped;
+
+    for (Read &rd : reads) {
+        if (!rd.barcode.empty()) {
+            groups[rd.barcode].push_back(std::move(rd));
+        } else if (params.min_umi_group_size < 2) {
+            ungrouped.push_back(std::move(rd));
+        }
+    }
     reads.clear();
 
     const unsigned int thread_count = std::thread::hardware_concurrency();
@@ -753,6 +761,11 @@ umi_collapse(
     log = std::accumulate(partial_logs.begin(), partial_logs.end(), log);
 
     reads.clear(); reads.shrink_to_fit();
+
+    result.insert(result.end(),
+        std::make_move_iterator(ungrouped.begin()),
+        std::make_move_iterator(ungrouped.end())
+    );
 
     return result;
 }
