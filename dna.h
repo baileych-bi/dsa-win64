@@ -35,6 +35,7 @@ class Nts;
 
 class Nt {
     friend class Nts;
+    friend class PolymerBase;
     friend class Polymer<Nt>;
 public:
     static const Nt A;

@@ -841,8 +841,10 @@ align_to_multiple_templates(vecvec<Orf> &&orfs,
         for (size_t i=0; i<orfs.size(); ++i) {
             if (dbs[i] == nullptr) {
                 template_ids.push_back(0);
-                alignment.alignment += orfs[i].aas.c_str();
-                alignment.cdns += orfs[i].cdns.c_str();
+                //alignment.alignment += orfs[i].aas.c_str();
+                alignment.alignment += orfs[i].aas.as_string_view();
+                //alignment.cdns += orfs[i].cdns.c_str();
+                alignment.cdns += orfs[i].cdns.as_string_view();
                 continue;
             }
 

@@ -219,16 +219,22 @@ Cdns::operator=(const Nts &dna) {
 }
 
 Cdns::Cdns(Nts &&dna) {
+    //std::cout << "Cdns::Cdns(Nts &&dna) called..." << std::endl;
+    //std::cout << "dna: " << dna << std::endl;
     swap_buffers(dna);
     mm256_pack_cdns(data(), c_data(), size());
     resize(size()/3);
+    //std::cout << "ret: " << *this << std::endl;
 }
 
 Cdns &
 Cdns::operator=(Nts &&dna) {
+    //std::cout << "Cdns::operator=(Nts &&dna) called..." << std::endl;
+    //std::cout << "dna: " << dna << std::endl;
     swap_buffers(dna);
     mm256_pack_cdns(data(), c_data(), size());
     resize(size()/3);
+    //std::cout << "ret: " << *this << std::endl;
     return *this;
 }
 

@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace bio {
 
+/*
 Overlap
 find_overlap(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {
     thread_local std::vector<uint16_t> lower; lower.clear();
@@ -45,9 +46,8 @@ find_overlap(const char *a, const size_t a_size, const char *b, const size_t b_s
         }
         std::swap(upper, lower);
     }
-
-
 }
+*/
 
 Overlap
 find_overlapv_256(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {

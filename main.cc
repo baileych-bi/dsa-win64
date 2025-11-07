@@ -729,6 +729,8 @@ main(int argc, char *argv[]) {
         for (size_t i = 0; i < alignments.size(); ++i) {
             GroupAlignment& aln = alignments[i];
             std::erase(aln.alignment, '-'); //remove gaps from alignment string before calculating uniqueness
+            std::transform(aln.alignment.begin(), aln.alignment.end(), 
+                aln.alignment.begin(), ::toupper); //and uppercase all the inserted residues
             std::erase(aln.cdns, ' '); //remove gaps from codons
             {
                 auto [ii, success] = uniq.insert(std::make_pair(aln.alignment, Counts{}));
