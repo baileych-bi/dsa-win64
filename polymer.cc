@@ -60,6 +60,7 @@ PolymerBase::resize(size_t n, char c) {
         memset(buf_ + hi_, c, diff);
         hi_ += diff;
     }
+    *(buf_ + hi_) = 0; //ensure null termination
 }
 
 void

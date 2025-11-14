@@ -532,6 +532,10 @@ assemble_reads(
 
         output.clear();
         for (const IterT last = ii + n; ii != last; ++ii) {
+            //FIXME: remove this
+            //std::string tmp_fw(ii->fw.dna.as_string_view());
+            //std::string tmp_rv(ii->rv.dna.as_string_view());
+
             Read rd = Read::assemble(
                 std::move(ii->fw),
                 std::move(ii->rv),
@@ -540,6 +544,11 @@ assemble_reads(
             
             if (rd.empty()) {
                 ++log.filter_could_not_assemble;
+
+                //FIXME: remove this
+                //std::cerr << "Assembly failed with --min_overlap=" << params.min_overlap << " and --max_mistmatches=" << params.max_mismatches << ":" << '\n'
+                //          << "fw\t" << tmp_fw << '\n'
+                //          << "rv\t" << tmp_rv << std::endl;
                 continue;
             }
 

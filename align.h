@@ -86,31 +86,7 @@ typedef std::string Qual;
 struct Overlap {
     size_t overlap    = 0;     ///< length of overlapping region
     size_t mismatches = 0;     ///< number of mismatches in overlapping region
-    /**
-      * This is true if sequences overlap 3' to 3' or false if the overlap is 5' to 5'
-      */
-    bool   in_order   = true;
 };
-
-/** Find the length of the longest suffix of a that is also a prefix of b
-  * 
-  * Vectorized implementation using AVX instructions. Tolerates some number of
-  * mismatches in the alignment although for most uses max_mismatches should
-  * be left at 0 (the default).
-  *
-  * @param a sequence a
-  * @param a_size number of symbols in a
-  * @param b sequence b
-  * @param b_size number of symbols in b
-  * @param max_mismatches maximum permissible mismatces in overlap region
-  * @return Overlap object containing length of the longest overlapping region and number of mismatches in that region.
-*/
-Overlap
-find_overlapv_256(const char *a, 
-                  const size_t a_size,
-                  const char *b,
-                  const size_t b_size,
-                  size_t max_mismatches=0);
 
 /** Element of the Needleman-Wunsch traceback matrix. */
 struct Cell {

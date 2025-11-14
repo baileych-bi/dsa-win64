@@ -32,59 +32,49 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace bio {
 
-/*
 Overlap
-find_overlap(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {
-    thread_local std::vector<uint16_t> lower; lower.clear();
-    thread_local std::vector<uint16_t> upper; upper.clear();
+find_overlap(const char *a, size_t a_size, const char *b, size_t b_size) {
 
-    lower.resize(a_size + 1, 0);
-    upper.resize(a_size + 1, 0);
+    Overlap ol{0, 0};
 
-    for (size_t i=1; i != b_size; ++i) {
-        for (size_t j=1; j != a_size; ++j) {
-        }
+    if ( a_size == 0 || b_size == 0 )
+        return ol;
+
+    if (a_size < b_size) {
+        size_t diff = b_size - a_size;
+        b += diff;
+        b_size -= diff;
+    } else {
+        size_t diff = a_size - b_size;
+        a += diff;
+        a_size -= diff;
+    }
+
+    thread_local std::vector<uint32_t> lower; lower.clear();
+    thread_local std::vector<uint32_t> upper; upper.clear();
+
+    lower.resize(b_size, 0);
+    upper.resize(b_size, 0);
+
+    for (size_t j=0; j < b_size; ++j)
+        upper[j] = uint32_t(a[0] == b[j]);
+
+    for (size_t i=1; i < a_size; ++i) {
         std::swap(upper, lower);
+        for (size_t j=0; j < b_size; ++j)
+            upper[j] = lower[j-1] + uint32_t(a[i] == b[j]); 
     }
-}
-*/
 
-Overlap
-find_overlapv_256(const char *a, const size_t a_size, const char *b, const size_t b_size, size_t max_mismatches) {
-    constexpr const unsigned REGW = sizeof(__m256i);
-    std::vector<uint16_t> upper((a_size+1+REGW-1)/REGW*REGW+REGW, 0);
-    std::vector<uint16_t> lower((a_size+1+REGW-1)/REGW*REGW+REGW, 0);
-
-    bool in_order = true;
-    size_t max_overlap = 0, max_row = 0;
-    for (size_t r=0; r<b_size; ++r) {
-        __m256i row_char = _mm256_set1_epi8(b[r]);
-        std::swap(upper, lower);
-        for (size_t c=0; c<a_size; c+=REGW) {
-            __m256i col_chars   = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&a[c]));
-            __m256i match       = _mm256_cmpeq_epi8(col_chars, row_char);       //0xFF where match
-                    match       = _mm256_and_si256(match, _mm256_set1_epi8(1)); //0x01 where match
-            __m256i lmatch      = _mm256_cvtepi8_epi16(_mm256_extracti128_si256(match, 0));
-            __m256i rmatch      = _mm256_cvtepi8_epi16(_mm256_extracti128_si256(match, 1));
-            __m256i scores      = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&lower[c   ]));
-                    scores      = _mm256_adds_epu16(scores, lmatch);
-            _mm256_storeu_si256(reinterpret_cast<__m256i *>(&upper[c+1   ]), scores);
-                    scores      = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(&lower[c+16]));
-                    scores      = _mm256_adds_epu16(scores, rmatch);
-            _mm256_storeu_si256(reinterpret_cast<__m256i *>(&upper[c+1+16]), scores);
+    uint32_t max_score = 0;
+    for (size_t j=0; j < b_size; ++j) {
+        if (upper[j] > max_score) {
+            max_score = upper[j];
+            ol.overlap = j;
+            ol.mismatches = 1 + j - upper[j];
         }
-        bool new_max = (max_overlap < upper[a_size]) && (r + 1 <= upper[a_size] + max_mismatches);
-        max_overlap = max_overlap * (!new_max) + new_max * upper[a_size];
-        max_row = max_row * (!new_max) + new_max * r;
     }
-    
-    for (size_t c=0; c <a_size; ++c) {
-        bool new_max = (max_overlap < upper[c+1]) && (c+1 <= upper[c+1] + max_mismatches);
-        max_overlap  = max_overlap * (!new_max) + new_max * upper[c+1];
-        max_row      = max_row     * (!new_max) + new_max * c;
-        in_order     = in_order * !new_max;
-    }
-    return {max_row+1, max_row+1-max_overlap, in_order};
+
+    return ol;
 }
 
 Read
@@ -92,24 +82,22 @@ Read::assemble(Read &&fw, Read &&rv, size_t min_overlap_size, size_t max_mismatc
     Read rd;
 
     rv.dna.reverse_complement();
-
-    Overlap ol = find_overlapv_256(fw.dna.c_data(), fw.dna.size(), 
-                                   rv.dna.c_data(), rv.dna.size());
+    //std::cerr << "rv.rc: " << rv.dna << std::endl;
+     
+    Overlap ol = find_overlap(fw.dna.c_data(), fw.dna.size(), 
+                              rv.dna.c_data(), rv.dna.size());
     if (ol.overlap < min_overlap_size || ol.mismatches > max_mismatches) {
-        //std::clog << "Found non-overlapping paired reads:" << std::endl;
-        //std::clog << "Fw:" << std::endl;
-        //std::clog << fw.dna.c_str() << std::endl;
-        //std::clog << "Rv:" << std::endl;
-        //std::clog << rv.dna.c_str() << std::endl;
         return rd;
     }
 
     std::reverse(rv.qual.begin(), rv.qual.end());
 
-    if (!ol.in_order) {
-        std::swap(fw.dna,  rv.dna);
-        std::swap(fw.qual, rv.qual);
-    }
+    assert(fw.dna.size() == fw.qual.size());
+    assert(rv.dna.size() == rv.qual.size());
+    assert(ol.overlap <= fw.dna.size());
+    assert(ol.overlap <= fw.qual.size());
+    assert(ol.overlap <= rv.dna.size());
+    assert(ol.overlap <= rv.qual.size());
 
     for (size_t i=fw.dna.size()-ol.overlap, j=0; j<ol.overlap; ++i, ++j) {
         if (fw.qual[i] < rv.qual[j]) {
@@ -117,11 +105,11 @@ Read::assemble(Read &&fw, Read &&rv, size_t min_overlap_size, size_t max_mismatc
             fw.dna[i]  = rv.dna[j] ;
         }
     }
+    
 
     rv.dna.exo(ol.overlap, 0);
     fw.dna += rv.dna;
     fw.qual.append(rv.qual.begin()+ol.overlap, rv.qual.end());
-
     rd.barcode = std::move(fw.barcode);
     rd.barcode += rv.barcode;
     rd.dna  = std::move(fw.dna );
@@ -336,15 +324,11 @@ nw_align_aas(const Aas &q, const Aas &t, const Matrix<int32_t> &match, int32_t g
     std::reverse(result.aligned_query.begin(), result.aligned_query.end());
 }
 */
-
 std::ostream &
 operator<<(std::ostream &os, const Read &rd) {
-    os << std::setw(9) << std::left << "barcode"    << " \t" << rd.barcode << std::endl;
-    os << std::setw(9) << std::right << "umi count" << " \t" << rd.umi_group_size << std::endl;
-    os << std::setw(9) << std::right << "fw dna"    << " \t" << rd.dna << std::endl;
-    os << std::setw(9) << std::right << "fw qual"   << " \t" << rd.qual << std::endl; 
-
+    os << std::setw(9) << std::left << "barcode"    << " 	" << rd.barcode << std::endl;
+    os << std::setw(9) << std::right << "umi count" << " 	" << rd.umi_group_size << std::endl;
+    os << std::setw(9) << std::right << "fw dna"    << " 	" << rd.dna << std::endl;
+    os << std::setw(9) << std::right << "fw qual"   << " 	" << rd.qual << std::endl;
     return os;
-}
-
-}; //namespace bio
+}}; //namespace bio
