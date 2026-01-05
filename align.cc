@@ -61,7 +61,8 @@ find_overlap(const char *a, size_t a_size, const char *b, size_t b_size) {
 
     for (size_t i=1; i < a_size; ++i) {
         std::swap(upper, lower);
-        for (size_t j=0; j < b_size; ++j)
+        upper[0] = uint32_t(b[0] == a[i]);
+        for (size_t j=1; j < b_size; ++j)
             upper[j] = lower[j-1] + uint32_t(a[i] == b[j]); 
     }
 
