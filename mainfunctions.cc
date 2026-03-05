@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "mainfunctions.h"
 
 #include <algorithm>
+#include <fstream>
 #include <numeric>
 #include <thread>
 #include <unordered_map>
@@ -525,6 +526,8 @@ assemble_reads(
 
     typedef std::vector<ReadPair>::iterator IterT;
 
+    std::ofstream unpairable_reads("unpairable_reads.txt");
+
     auto perform_assembly = [&](IterT ii, 
                         size_t n,
                         std::vector<Read> &output,
@@ -544,9 +547,10 @@ assemble_reads(
             
             if (rd.empty()) {
                 ++log.filter_could_not_assemble;
+                
 
                 //FIXME: remove this
-                //std::cerr << "Assembly failed with --min_overlap=" << params.min_overlap << " and --max_mistmatches=" << params.max_mismatches << ":" << '\n'
+                //unpairable_reads << "Assembly failed with --min_overlap=" << params.min_overlap << " and --max_mistmatches=" << params.max_mismatches << ":" << '\n'
                 //          << "fw\t" << tmp_fw << '\n'
                 //          << "rv\t" << tmp_rv << std::endl;
                 continue;

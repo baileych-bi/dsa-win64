@@ -33,23 +33,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace bio {
 
 Overlap
-find_overlap(const char *a, size_t a_size, const char *b, size_t b_size) {
+find_overlap(const char *a, size_t a_size, const char *b, size_t b_size, 
+    size_t min_overlap, size_t max_mismtaches) {
 
     Overlap ol{0, 0};
 
-    if ( a_size == 0 || b_size == 0 )
-        return ol;
-
-    if (a_size < b_size) {
-        size_t diff = b_size - a_size;
-        b += diff;
-        b_size -= diff;
-    } else {
-        size_t diff = a_size - b_size;
-        a += diff;
-        a_size -= diff;
-    }
-
+    if (a_size == 0 || b_size == 0) return ol;
+    
     thread_local std::vector<uint32_t> lower; lower.clear();
     thread_local std::vector<uint32_t> upper; upper.clear();
 
@@ -67,11 +57,14 @@ find_overlap(const char *a, size_t a_size, const char *b, size_t b_size) {
     }
 
     uint32_t max_score = 0;
-    for (size_t j=0; j < b_size; ++j) {
-        if (upper[j] > max_score) {
-            max_score = upper[j];
-            ol.overlap = j;
-            ol.mismatches = 1 + j - upper[j];
+    for (size_t j=min_overlap; j < b_size; ++j) {
+        uint32_t score = upper[j];
+        uint32_t overlap = j + 1;
+        uint32_t mismatches = overlap - score;
+        if (overlap >= min_overlap && mismatches <= max_mismtaches && score >= max_score) {
+            score = max_score;
+            ol.overlap = overlap;
+            ol.mismatches = mismatches;
         }
     }
 
@@ -83,13 +76,29 @@ Read::assemble(Read &&fw, Read &&rv, size_t min_overlap_size, size_t max_mismatc
     Read rd;
 
     rv.dna.reverse_complement();
-    //std::cerr << "rv.rc: " << rv.dna << std::endl;
-     
+
+    /** Remove this when done debugging. */
+    //fw.dna = "tctaagaaattggtgttggccaaaagaggcgataccgtggagctgacctgcaccgcaagccagaagaagaacttccagttccactggaagttgtctaaccagatcaagatcctgggcaaccagggcagcttcttgaccaagggacctagcaagctgaatgccagagtgttctctcgtaggagcctgtgggatcaaggcaccttccctctgatcataaaaaacctgaagatagaggcgtgtggtacctacatctgtgaa";
+    //rv.dna = "cctacatctgtgaagtggaagatcagcaggaggaagtgcagctgctggtgttcgggctgactgctaactccgatacccatctgctgcaggggcagagcctaacactgacactggagagccctcctggcagcagcccaagcctgcaatgccgcagccctggaggcaagaacatccaaggtggcaaaaccctttctgtcagccagctggaactgcaggattctggaacctggacatgtacagtgctgcaggatcagaaaaccttggagttcaagattgatatt";
+    //fw.dna = "aatc";
+    //rv.dna = "tcga";
+    /** End remove this section. */
+
     Overlap ol = find_overlap(fw.dna.c_data(), fw.dna.size(), 
-                              rv.dna.c_data(), rv.dna.size());
+                              rv.dna.c_data(), rv.dna.size(),
+                              min_overlap_size, max_mismatches);
     if (ol.overlap < min_overlap_size || ol.mismatches > max_mismatches) {
+        //std::cerr << "find overlap failed with overlap=" << ol.overlap << " and mismatches=" << ol.mismatches << std::endl;
+        //std::cerr << "fw\t" << fw.dna << std::endl;
+        //std::cerr << "rv\t" << rv.dna << std::endl;
+
+        //exit(0);
+
         return rd;
     }
+
+    //std::cerr << "Everything's ok!" << std::endl;
+    //exit (0);
 
     std::reverse(rv.qual.begin(), rv.qual.end());
 
